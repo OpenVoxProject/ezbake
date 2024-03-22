@@ -168,9 +168,11 @@ if options.output_type == 'rpm'
     options.systemd_el = 1
   elsif options.operating_system == :el
     if options.os_version == 7
-      options.java = 'java-11-openjdk-headless'
+      options.java = 'jre-11-headless'
+      options.java_bin = '/usr/lib/jvm/jre-11/bin/java'
     elsif options.os_version >= 8
-      options.java = 'java-17-openjdk-headless'
+      options.java = 'jre-17-headless'
+      options.java_bin = '/usr/lib/jvm/jre-17/bin/java'
     else
       fail "Unrecognized el os version #{options.os_version}"
     end
