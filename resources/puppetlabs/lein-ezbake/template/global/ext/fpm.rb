@@ -10,6 +10,7 @@ options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
+options.java_bin = '/usr/bin/java'
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
