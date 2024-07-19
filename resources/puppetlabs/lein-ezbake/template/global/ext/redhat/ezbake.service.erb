@@ -50,7 +50,7 @@ ExecStartPre=<%= action %>
 <% end -%>
 <% end -%>
 
-ExecStart="$JAVA_BIN" $JAVA_ARGS $LOG_APPENDER \
+ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS $LOG_APPENDER \
   '-XX:OnOutOfMemoryError=kill -9 %p' -XX:+CrashOnOutOfMemoryError \
   -XX:ErrorFile="$LOGS_DIRECTORY/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
   -cp "$INSTALL_DIR/<%= EZBake::Config[:uberjar_name] %>" \
