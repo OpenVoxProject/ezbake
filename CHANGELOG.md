@@ -9,6 +9,7 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 * Add Debian 12 bookworm as a FOSS build target
 * Use systemd's PrivateTmp feature for improved security
 * Drop sysvinit support on Debian
+* Drop service wrappers and natively use systemd
 
 ## [2.6.1]
 * Fix the ability to add a resources directory to a project with :include-dir by copying the resources to the staging directory directly.

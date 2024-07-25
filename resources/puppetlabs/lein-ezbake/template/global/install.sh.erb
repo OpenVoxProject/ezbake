@@ -15,13 +15,11 @@ unitdir_redhat=${unitdir:-/usr/lib/systemd/system}
 unitdir_debian=${unitdir:-/lib/systemd/system}
 defaultsdir_redhat=${defaultsdir:-/etc/sysconfig}
 defaultsdir_debian=${defaultsdir:-/etc/default}
-tmpfilesdir=${tmpfilesdir:=/usr/lib/tmpfiles.d}
 datadir=${datadir:=${prefix}/share}
 real_name=${real_name:=<%= EZBake::Config[:real_name] -%>}
 projdatadir=${projdatadir:=${datadir}/${real_name}}
 confdir=${confdir:=/etc}
 projconfdir=${projconfdir:=${confdir}/puppetlabs/${real_name}}
-rundir=${rundir:=/var/run/puppetlabs/${real_name}}
 # Application specific bin directory
 bindir=${bindir:=/opt/puppetlabs/server/apps/${real_name}/bin}
 # User facing bin directory, expected to be added to interactive shell PATH
@@ -174,7 +172,6 @@ fi
     ln -s "../apps/${real_name}/bin/<%= basename %>" "${DESTDIR}${symbindir}/<%= basename %>"
     ln -s "../server/apps/${real_name}/bin/<%= basename %>" "${DESTDIR}${uxbindir}/<%= basename %>"
 <% end -%>
-    install -d -m 0755 "${DESTDIR}${rundir}"
     install -d -m 700 "${DESTDIR}${app_logdir}"
 <% EZBake::Config[:create_dirs].each do |dir| -%>
     install -d -m 700 "${DESTDIR}<%= dir %>"
@@ -229,8 +226,6 @@ function task_systemd_redhat {
     task defaults_redhat
     install -d -m 0755 "${DESTDIR}${unitdir_redhat}"
     install -m 0644 ext/redhat/<%= EZBake::Config[:project] %>.service "${DESTDIR}${unitdir_redhat}/<%= EZBake::Config[:project] %>.service"
-    install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 # Install the systemd and defaults configuration for Debian.
@@ -238,8 +233,6 @@ function task_systemd_deb {
     task defaults_deb
     install -d -m 0755 "${DESTDIR}${unitdir_debian}"
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.service_file "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
-    install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 function task_service_account {
@@ -320,8 +313,6 @@ function task_postinst_permissions {
     chmod 770 $app_data
     chown <%= EZBake::Config[:user] %>:<%= EZBake::Config[:group] %> $projconfdir
     chmod 750 $projconfdir
-    chown <%= EZBake::Config[:user] %>:<%= EZBake::Config[:group] %> $rundir
-    chmod 0755 $rundir
 <% EZBake::Config[:create_dirs].each do |dir| -%>
     chown <%= EZBake::Config[:user] %>:<%= EZBake::Config[:group] %> <%= dir %>
     chmod 700 <%= dir %>
