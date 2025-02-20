@@ -6,12 +6,8 @@ require 'ostruct'
 
 options = OpenStruct.new
 # settin' some defaults
-options.systemd = 0
-options.sysvinit = 0
 options.systemd_el = 0
 options.systemd_sles = 0
-options.old_el = 0
-options.old_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
 options.release = 1
@@ -136,11 +132,7 @@ fail "--dist is required!" if options.output_type == 'deb' && options.dist.nil?
 if options.sources.empty?
   options.sources = case options.operating_system
                     when :amazon, :fedora, :sles, :el, :redhatfips
-                      if options.operating_system == :el && options.os_version < 7 || options.operating_system == :sles && options.os_version < 12 #sysv rpm platforms
-                        ['etc', 'opt', 'var']
-                      else
-                        ['etc', 'opt', 'usr', 'var']
-                      end
+                      ['etc', 'opt', 'usr', 'var']
                     when :debian, :ubuntu
                       if options.dist == 'trusty' #trusty is the only sysv deb we build for right now
                         ['etc', 'opt', 'var']
@@ -195,39 +187,24 @@ if options.output_type == 'rpm'
       fail "Unrecognized el os version #{options.os_version}"
     end
 
-    options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :redhatfips && options.os_version >= 7 # systemd redhatfips
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :sles && options.os_version >= 12 # systemd sles
-    options.systemd = 1
+  elsif options.operating_system == :sles
     options.systemd_sles = 1
     options.sles = 1
     options.java = 'java-17-openjdk-headless'
-  elsif options.operating_system == :sles #old sles
-    options.sysvinit = 1
-    options.old_sles = 1
   end
 
-  fpm_opts << "--rpm-rpmbuild-define '_with_sysvinit #{options.sysvinit}'"
-  fpm_opts << "--rpm-rpmbuild-define '_with_systemd #{options.systemd}'"
-  fpm_opts << "--rpm-rpmbuild-define '_old_sles #{options.old_sles}'"
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
   fpm_opts << "--rpm-rpmbuild-define '_systemd_sles #{options.systemd_sles}'"
-  fpm_opts << "--rpm-rpmbuild-define '_old_el #{options.old_el}'"
   fpm_opts << "--rpm-rpmbuild-define '_sysconfdir /etc'"
   fpm_opts << "--rpm-rpmbuild-define '_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_rundir /var/run'"
   fpm_opts << "--rpm-rpmbuild-define '__jar_repack 0'"
 
   shared_opts << "--rpm-dist #{options.dist}"
-
-  if options.old_el == 1
-    fpm_opts << "--depends chkconfig"
-  elsif options.old_sles == 1
-    fpm_opts << "--depends aaa_base"
-  end
 
   if options.systemd_el == 1
     fpm_opts << "--depends systemd"
@@ -266,10 +243,7 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/server/data"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd/system"
-  fpm_opts << "--rpm-auto-add-exclude-directories /etc/init.d"
-  fpm_opts << "--rpm-auto-add-exclude-directories /etc/rc.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/logrotate.d"
-  fpm_opts << "--rpm-auto-add-exclude-directories /etc/rc.d/init.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/tmpfiles.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/log/puppetlabs"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/run/puppetlabs"
