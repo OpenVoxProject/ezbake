@@ -26,16 +26,6 @@ if [ ! -d "$basepath/systemd_el" ]; then
         cp -r "$basepath/base" "$basepath/systemd_el"
         DESTDIR="$basepath/systemd_el" bash install.sh systemd_redhat
 fi
-if [ ! -d "$basepath/old_el" ]; then
-        cp -r "$basepath/base" "$basepath/old_el"
-        DESTDIR="$basepath/old_el" bash install.sh sysv_init_redhat
-fi
-if [ ! -d "$basepath/old_sles" ]; then
-        cp -r "$basepath/base" "$basepath/old_sles"
-        DESTDIR="$basepath/old_sles" bash install.sh sysv_init_suse
-fi
-
-<%- rpm_paths = [ "$basepath/systemd_el", "$basepath/old_el", "$basepath/old_sles" ] -%>
 
 # things are only different if we have docs, deb docs get
 # installed in an unversioned folder but rpm docs get installed
@@ -130,11 +120,7 @@ params+=('--termini-description' "$(printf "$termini_description")")
 <% end -%>
 
 <% if EZBake::Config[:logrotate_enabled]-%>
-if [[ "$dir" =~ old_ ]]; then
-        DESTDIR=$dir bash install.sh logrotate_legacy
-else
-        DESTDIR=$dir bash install.sh logrotate
-fi
+DESTDIR=$dir bash install.sh logrotate
 params+=('--logrotate')
 <% end -%>
 
@@ -153,27 +139,23 @@ if [[ "$os" = 'el' || "$os" = 'sles' || "$os" = 'fedora' || "$os" = 'redhatfips'
                 params+=("<%= dep -%>")
         <% end -%>
         # get rpm install trigger scripts
-        <% EZBake::Config[:redhat][:postinst_install_triggers].each do |package, scripts|
-             rpm_paths.each do |path| -%>
-              cat > <%=path %>/<%=package%>_postinst_triggers <<EOM
+        <% EZBake::Config[:redhat][:postinst_install_triggers].each do |package, scripts| -%>
+              cat > $basepath/systemd_el/<%=package%>_postinst_triggers <<EOM
               if [ "\$1" -eq 1 ] ; then
                  "<%= scripts.join("\n") %>"
                  :
               fi
 EOM
-            <% end -%>
             params+=("--rpm-trigger" "'<%=package%>: $dir/<%=package%>_postinst_triggers'")
         <% end -%>
         # get rpm upgrade trigger scripts
-        <% EZBake::Config[:redhat][:postinst_upgrade_triggers].each do |package, scripts|
-             rpm_paths.each do |path| -%>
-             cat > <%=path %>/<%=package%>_postinst_triggers <<EOM
+        <% EZBake::Config[:redhat][:postinst_upgrade_triggers].each do |package, scripts| -%>
+             cat > $basepath/systemd_el/<%=package%>_postinst_triggers <<EOM
               if [ "\$1" -gt 1 ] ; then
                  "<%= scripts.join("\n") %>"
                  :
               fi
 EOM
-               <% end -%>
             params+=("--rpm-trigger" "'<%=package%>: $dir/<%=package%>_postinst_triggers'")
         <% end -%>
         : # Need something in case there are no additional dependencies
