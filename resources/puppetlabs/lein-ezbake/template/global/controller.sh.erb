@@ -37,27 +37,11 @@ if [ -d ext/docs ]; then
                         cp -r "$basepath/base_deb" "$basepath/systemd_deb"
                         DESTDIR="$basepath/systemd_deb" bash install.sh systemd_deb
                 fi
-                if [ ! -d "$basepath/systemd_notasksmax_deb" ]; then
-                        cp -r "$basepath/base_deb" "$basepath/systemd_notasksmax_deb"
-                        DESTDIR="$basepath/systemd_notasksmax_deb" USE_TASKSMAX=false bash install.sh systemd_deb
-                fi
-                if [ ! -d "$basepath/sysvinit_deb" ]; then
-                        cp -r "$basepath/base_deb" "$basepath/sysvinit_deb"
-                        DESTDIR="$basepath/sysvinit_deb" bash install.sh sysv_init_deb
-                fi
         fi
 else
         if [ ! -d "$basepath/systemd_deb" ]; then
                 cp -r "$basepath/base" "$basepath/systemd_deb"
                 DESTDIR="$basepath/systemd_deb" bash install.sh systemd_deb
-        fi
-        if [ ! -d "$basepath/systemd_notasksmax_deb" ]; then
-                cp -r "$basepath/base" "$basepath/systemd_notasksmax_deb"
-                DESTDIR="$basepath/systemd_notasksmax_deb" USE_TASKSMAX=false bash install.sh systemd_deb
-        fi
-        if [ ! -d "$basepath/sysvinit_deb" ]; then
-                cp -r "$basepath/base" "$basepath/sysvinit_deb"
-                DESTDIR="$basepath/sysvinit_deb" bash install.sh sysv_init_deb
         fi
 fi
 
@@ -72,15 +56,7 @@ case $os in
         # there's no differences in packaging for deb vs ubuntu
         # if that changes we'll need to fix this
         debian|ubuntu)
-                if [ "$os_dist" = 'trusty' ]; then
-                        dir="$basepath/sysvinit_deb"
-                elif [ "$os_dist" = 'jessie' ]; then
-                        # the version of systemd that ships with jessie doesn't
-                        # support TasksMax
-                        dir="$basepath/systemd_notasksmax_deb"
-                else
-                        dir="$basepath/systemd_deb"
-                fi
+                dir="$basepath/systemd_deb"
                 ;;
         amazon|el|fedora|redhatfips|sles)
                 dir="$basepath/systemd_el"
