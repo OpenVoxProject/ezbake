@@ -77,12 +77,7 @@ function task_service {
     elif [ "$OSFAMILY" = "Debian" ]; then
         unitdir=${unitdir_debian}
         defaultsdir=${defaultsdir_debian}
-        sysv_codenames=("squeeze" "wheezy" "lucid" "precise" "trusty")
-        if $(echo ${sysv_codenames[@]} | grep -q $CODENAME) ; then
-            task install_source_deb_sysv
-        else
-            task install_source_deb_systemd
-        fi
+        task install_source_deb_systemd
     else
         echo "Unsupported platform, exiting ..."
         exit 1
@@ -97,15 +92,6 @@ function task_install_source_rpm_systemd {
     task logrotate
     task postinst_redhat
     task postinst_permissions
-}
-
-# Source based install for Debian based + sysv setups
-function task_install_source_deb_sysv {
-    task preinst_deb
-    task install_deb
-    task sysv_init_deb
-    task logrotate
-    task postinst_deb
 }
 
 # Source based install for Debian based + systemd setups
@@ -261,9 +247,6 @@ function task_systemd_deb {
     task sysv_init_deb
     install -d -m 0755 "${DESTDIR}${unitdir_debian}"
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.service_file "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
-    if [ "$USE_TASKSMAX" == "false" ]; then
-      sed -i "s/^TasksMax/# Don't set TasksMax since the option doesn't exist\n# TasksMax/" "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
-    fi
     install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
     install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
