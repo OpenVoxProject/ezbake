@@ -74,11 +74,7 @@ function task_service {
     if [ "$OSFAMILY" = "RedHat" ]; then
         unitdir=${unitdir_redhat}
         defaultsdir=${defaultsdir_redhat}
-        if [ $MAJREV -lt 7 ]; then
-            task install_source_rpm_sysv
-        else
-            task install_source_rpm_systemd
-        fi
+        task install_source_rpm_systemd
     elif [ "$OSFAMILY" = "Debian" ]; then
         unitdir=${unitdir_debian}
         defaultsdir=${defaultsdir_debian}
@@ -92,16 +88,6 @@ function task_service {
         echo "Unsupported platform, exiting ..."
         exit 1
     fi
-}
-
-# Source based install for Redhat based + sysv setups
-function task_install_source_rpm_sysv {
-    task preinst_redhat
-    task install_redhat
-    task sysv_init_redhat
-    task logrotate_legacy
-    task postinst_redhat
-    task postinst_permissions
 }
 
 # Source based install for Redhat based + systemd setups
@@ -254,20 +240,6 @@ function task_defaults_deb {
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.default_file "${DESTDIR}${defaultsdir_debian}/<%= EZBake::Config[:project] %>"
 }
 
-# Install the sysv and defaults configuration for Redhat.
-function task_sysv_init_redhat {
-    task defaults_redhat
-    install -d -m 0755 "${DESTDIR}${initdir}"
-    install -m 0755 ext/redhat/init "${DESTDIR}${initdir}/<%= EZBake::Config[:project] %>"
-}
-
-# Install the sysv and defaults configuration for SuSE.
-function task_sysv_init_suse {
-    task defaults_redhat
-    install -d -m 0755 "${DESTDIR}${initdir}"
-    install -m 0755 ext/redhat/init.suse "${DESTDIR}${initdir}/<%= EZBake::Config[:project] %>"
-}
-
 # Install the systemd and defaults configuration for Redhat.
 function task_systemd_redhat {
     task defaults_redhat
@@ -385,16 +357,10 @@ function task_postinst_permissions {
 <% end -%>
 }
 
-# Install logrotate (usually el7, fedora 16 and above)
+# Install logrotate
 function task_logrotate {
     install -d -m 0755 "${DESTDIR}${confdir}/logrotate.d"
     cp -pr ext/<%= EZBake::Config[:project] -%>.logrotate.conf "${DESTDIR}${confdir}/logrotate.d/<%= EZBake::Config[:project] %>"
-}
-
-# Install legacy logrotate
-function task_logrotate_legacy {
-    install -d -m 0755 "${DESTDIR}${confdir}/logrotate.d"
-    cp -pr ext/<%= EZBake::Config[:project] -%>.logrotate-legacy.conf "${DESTDIR}${confdir}/logrotate.d/<%= EZBake::Config[:project] %>"
 }
 
 ##################

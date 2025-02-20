@@ -31,8 +31,6 @@ templates:
     target: ext/debian/{{{project}}}.service_file
   - source: ext/ezbake.logrotate.conf.erb
     target: ext/{{{project}}}.logrotate.conf
-  - source: ext/ezbake.logrotate-legacy.conf.erb
-    target: ext/{{{project}}}.logrotate-legacy.conf
   - source: ext/ezbake.tmpfiles.conf.erb
     target: ext/{{{project}}}.tmpfiles.conf
   - source: ext/ezbake.needrestart.conf.erb
@@ -41,8 +39,6 @@ templates:
   - ext/redhat/postinst.erb
   - ext/redhat/prerm.erb
   - ext/redhat/postrm.erb
-  - ext/redhat/init.erb
-  - ext/redhat/init.suse.erb
   - ext/debian/postrm.erb
   - ext/debian/preinst.erb
   - ext/debian/prerm.erb
