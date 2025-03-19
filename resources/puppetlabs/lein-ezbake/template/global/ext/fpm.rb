@@ -380,6 +380,13 @@ options.replaces.each do |pkg, version|
   end
 end
 
+# This is kludgy. Make it better one of these days for any package
+# that has a corresponding termini package.
+if options.name == "openvoxdb"
+  termini_opts << "--replaces 'puppetdb-termini'"
+  termini_opts << "--conflicts 'puppetdb-termini'"
+end
+
 if options.is_pe
   fpm_opts << "--depends pe-java"
   fpm_opts << "--depends pe-puppet-enterprise-release"
