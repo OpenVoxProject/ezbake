@@ -351,16 +351,40 @@ shared_opts << "--url http://github.com/openvoxproject"
 shared_opts << "--architecture all"
 
 options.replaces.each do |pkg, version|
+  # Strip the surrounding quotes since we add them in a certain way here.
+  # We should probably just fix this in the core code by being smarter with
+  # as-ruby-literaly, but someone more familiar with Clojure can do that part.
+  pkg = pkg.delete_prefix("'").delete_suffix("'")
+  version = version.delete_prefix("'").delete_suffix("'") unless version.nil?
   if options.output_type == 'rpm'
-    fpm_opts << "--replaces '#{pkg} <= #{version}-1'"
-    fpm_opts << "--conflicts '#{pkg} <= #{version}-1'"
+    val = if version.nil? || version.empty?
+            "'#{pkg}'"
+          else
+            "'#{pkg} <= #{version}-1'"
+          end
+    fpm_opts << "--replaces #{val}"
+    fpm_opts << "--conflicts #{val}"
   elsif options.output_type == 'deb'
     # why debian, why.
-    fpm_opts << "--replaces '#{pkg} (<< #{version}-1openvox1)'"
-    fpm_opts << "--conflicts '#{pkg} (<< #{version}-1openvox1)'"
-    fpm_opts << "--replaces '#{pkg} (<< #{version}-1#{options.dist})'"
-    fpm_opts << "--conflicts '#{pkg} (<< #{version}-1#{options.dist})'"
+    if version.nil? || version.empty?
+      fpm_opts << "--replaces '#{pkg}'"
+      fpm_opts << "--conflicts '#{pkg}'"
+    else
+      fpm_opts << "--replaces '#{pkg} (<< #{version}-1voxpupuli1)'"
+      fpm_opts << "--conflicts '#{pkg} (<< #{version}-1voxpupuli1)'"
+      fpm_opts << "--replaces '#{pkg} (<< #{version}-1puppetlabs1)'"
+      fpm_opts << "--conflicts '#{pkg} (<< #{version}-1puppetlabs1)'"
+      fpm_opts << "--replaces '#{pkg} (<< #{version}-1#{options.dist})'"
+      fpm_opts << "--conflicts '#{pkg} (<< #{version}-1#{options.dist})'"
+    end
   end
+end
+
+# This is kludgy. Make it better one of these days for any package
+# that has a corresponding termini package.
+if options.name == "openvoxdb"
+  termini_opts << "--replaces 'puppetdb-termini'"
+  termini_opts << "--conflicts 'puppetdb-termini'"
 end
 
 if options.is_pe
