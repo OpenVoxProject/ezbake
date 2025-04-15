@@ -13,7 +13,7 @@ options.systemd_sles = 0
 options.old_el = 0
 options.old_sles = 0
 options.sles = 0
-options.java = 'java-1.8.0-openjdk-headless'
+options.java = 'java-11-openjdk-headless | java-17-openjdk-headless | java-21-openjdk-headless | java-25-openjdk-headless'
 options.release = 1
 options.platform_version = 0
 options.is_pe = false
@@ -180,43 +180,20 @@ if options.output_type == 'rpm'
     options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :amazon
-    if ! options.is_pe
-      fpm_opts << "--depends tzdata-java"
-      options.java = '(java-17-amazon-corretto-headless or java-11-amazon-corretto-headless)'
-    end
-
+    fpm_opts << "--depends tzdata-java"
+    options.java = '(java-11-amazon-corretto-headless or java-17-amazon-corretto-headless or java-21-amazon-corretto-headless or java-25-amazon-corretto-headless)'
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :el && options.os_version >= 7 # systemd el
-    if ! options.is_pe
-      options.java =
-        if options.os_version == 7
-          'java-11-openjdk-headless'
-        elsif options.os_version >= 8
-          'java-17-openjdk-headless'
-        else
-          fail "Unrecognized el os version #{options.os_version}"
-        end
-    end
-
+  elsif options.operating_system == :el
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :el # old el
-    options.sysvinit = 1
-    options.old_el = 1
-  elsif options.operating_system == :redhatfips && options.os_version >= 7 # systemd redhatfips
+  elsif options.operating_system == :redhatfips
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :sles && options.os_version >= 12 # systemd sles
+  elsif options.operating_system == :sles
     options.systemd = 1
     options.systemd_sles = 1
     options.sles = 1
-    if ! options.is_pe
-      options.java = 'java-11-openjdk-headless'
-    end
-  elsif options.operating_system == :sles #old sles
-    options.sysvinit = 1
-    options.old_sles = 1
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_with_sysvinit #{options.sysvinit}'"
@@ -312,19 +289,13 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  if ! options.is_pe
-    options.java = 'openjdk-17-jre-headless | openjdk-11-jre-headless'
-  end
+  options.java = 'openjdk-11-jre-headless | openjdk-17-jre-headless | openjdk-21-jre-headless | openjdk-25-jre-headless'
 
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
   fpm_opts << '--deb-build-depends mawk'
   fpm_opts << '--deb-build-depends lsb-release'
-  if options.is_pe
-    fpm_opts << '--deb-build-depends puppet-agent'
-  else
-    fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
-  end
+  fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
   fpm_opts << '--deb-priority optional'
   fpm_opts << '--category utils'
   options.deb_interest_triggers.each do |trigger|
@@ -387,14 +358,7 @@ if options.name == "openvoxdb"
   termini_opts << "--conflicts 'puppetdb-termini'"
 end
 
-if options.is_pe
-  fpm_opts << "--depends pe-java"
-  fpm_opts << "--depends pe-puppet-enterprise-release"
-  fpm_opts << "--depends pe-bouncy-castle-jars"
-else
-  fpm_opts << "--depends '#{options.java}'"
-end
-
+fpm_opts << "--depends '#{options.java}'"
 fpm_opts << "--depends bash"
 fpm_opts << "--depends net-tools"
 fpm_opts << "--depends /usr/bin/which" if options.output_type == 'rpm'
