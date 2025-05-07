@@ -8,6 +8,7 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 * On all Debian platforms simplify java depends, allow 17 or 11, prefer 17
 * Add Debian 12 bookworm as a FOSS build target
 * Use systemd's PrivateTmp feature for improved security
+* Test ezbake on Java 11, 17 and 21
 
 ## [2.6.1]
 * Fix the ability to add a resources directory to a project with :include-dir by copying the resources to the staging directory directly.
