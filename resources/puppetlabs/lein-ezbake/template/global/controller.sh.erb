@@ -26,16 +26,6 @@ if [ ! -d "$basepath/systemd_el" ]; then
         cp -r "$basepath/base" "$basepath/systemd_el"
         DESTDIR="$basepath/systemd_el" bash install.sh systemd_redhat
 fi
-if [ ! -d "$basepath/old_el" ]; then
-        cp -r "$basepath/base" "$basepath/old_el"
-        DESTDIR="$basepath/old_el" bash install.sh sysv_init_redhat
-fi
-if [ ! -d "$basepath/old_sles" ]; then
-        cp -r "$basepath/base" "$basepath/old_sles"
-        DESTDIR="$basepath/old_sles" bash install.sh sysv_init_suse
-fi
-
-<%- rpm_paths = [ "$basepath/systemd_el", "$basepath/old_el", "$basepath/old_sles" ] -%>
 
 # things are only different if we have docs, deb docs get
 # installed in an unversioned folder but rpm docs get installed
@@ -47,27 +37,11 @@ if [ -d ext/docs ]; then
                         cp -r "$basepath/base_deb" "$basepath/systemd_deb"
                         DESTDIR="$basepath/systemd_deb" bash install.sh systemd_deb
                 fi
-                if [ ! -d "$basepath/systemd_notasksmax_deb" ]; then
-                        cp -r "$basepath/base_deb" "$basepath/systemd_notasksmax_deb"
-                        DESTDIR="$basepath/systemd_notasksmax_deb" USE_TASKSMAX=false bash install.sh systemd_deb
-                fi
-                if [ ! -d "$basepath/sysvinit_deb" ]; then
-                        cp -r "$basepath/base_deb" "$basepath/sysvinit_deb"
-                        DESTDIR="$basepath/sysvinit_deb" bash install.sh sysv_init_deb
-                fi
         fi
 else
         if [ ! -d "$basepath/systemd_deb" ]; then
                 cp -r "$basepath/base" "$basepath/systemd_deb"
                 DESTDIR="$basepath/systemd_deb" bash install.sh systemd_deb
-        fi
-        if [ ! -d "$basepath/systemd_notasksmax_deb" ]; then
-                cp -r "$basepath/base" "$basepath/systemd_notasksmax_deb"
-                DESTDIR="$basepath/systemd_notasksmax_deb" USE_TASKSMAX=false bash install.sh systemd_deb
-        fi
-        if [ ! -d "$basepath/sysvinit_deb" ]; then
-                cp -r "$basepath/base" "$basepath/sysvinit_deb"
-                DESTDIR="$basepath/sysvinit_deb" bash install.sh sysv_init_deb
         fi
 fi
 
@@ -82,32 +56,10 @@ case $os in
         # there's no differences in packaging for deb vs ubuntu
         # if that changes we'll need to fix this
         debian|ubuntu)
-                if [ "$os_dist" = 'trusty' ]; then
-                        dir="$basepath/sysvinit_deb"
-                elif [ "$os_dist" = 'jessie' ]; then
-                        # the version of systemd that ships with jessie doesn't
-                        # support TasksMax
-                        dir="$basepath/systemd_notasksmax_deb"
-                else
-                        dir="$basepath/systemd_deb"
-                fi
+                dir="$basepath/systemd_deb"
                 ;;
-        el|redhatfips)
-                if [ "$os_version" -gt '6' ]; then
-                        dir="$basepath/systemd_el"
-                else
-                        dir="$basepath/old_el"
-                fi
-                ;;
-        amazon)
+        amazon|el|redhatfips|sles)
                 dir="$basepath/systemd_el"
-                ;;
-        sles)
-                if [ "$os_version" -gt '11' ]; then
-                        dir="$basepath/systemd_el"
-                else
-                        dir="$basepath/old_sles"
-                fi
                 ;;
         *)
                 echo "I have no idea what I'm doing with $os, teach me?" >&2
@@ -144,11 +96,7 @@ params+=('--termini-description' "$(printf "$termini_description")")
 <% end -%>
 
 <% if EZBake::Config[:logrotate_enabled]-%>
-if [[ "$dir" =~ old_ ]]; then
-        DESTDIR=$dir bash install.sh logrotate_legacy
-else
-        DESTDIR=$dir bash install.sh logrotate
-fi
+DESTDIR=$dir bash install.sh logrotate
 params+=('--logrotate')
 <% end -%>
 
@@ -171,27 +119,23 @@ if [[ "$os" = 'el' || "$os" = 'sles' || "$os" = 'fedora' || "$os" = 'redhatfips'
                 params+=("<%= dep -%>")
         <% end -%>
         # get rpm install trigger scripts
-        <% EZBake::Config[:redhat][:postinst_install_triggers].each do |package, scripts|
-             rpm_paths.each do |path| -%>
-              cat > <%=path %>/<%=package%>_postinst_triggers <<EOM
+        <% EZBake::Config[:redhat][:postinst_install_triggers].each do |package, scripts| -%>
+              cat > $basepath/systemd_el/<%=package%>_postinst_triggers <<EOM
               if [ "\$1" -eq 1 ] ; then
                  "<%= scripts.join("\n") %>"
                  :
               fi
 EOM
-            <% end -%>
             params+=("--rpm-trigger" "'<%=package%>: $dir/<%=package%>_postinst_triggers'")
         <% end -%>
         # get rpm upgrade trigger scripts
-        <% EZBake::Config[:redhat][:postinst_upgrade_triggers].each do |package, scripts|
-             rpm_paths.each do |path| -%>
-             cat > <%=path %>/<%=package%>_postinst_triggers <<EOM
+        <% EZBake::Config[:redhat][:postinst_upgrade_triggers].each do |package, scripts| -%>
+             cat > $basepath/systemd_el/<%=package%>_postinst_triggers <<EOM
               if [ "\$1" -gt 1 ] ; then
                  "<%= scripts.join("\n") %>"
                  :
               fi
 EOM
-               <% end -%>
             params+=("--rpm-trigger" "'<%=package%>: $dir/<%=package%>_postinst_triggers'")
         <% end -%>
         : # Need something in case there are no additional dependencies
