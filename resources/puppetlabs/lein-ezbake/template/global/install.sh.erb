@@ -235,17 +235,9 @@ function task_systemd_redhat {
     install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
-# Install the sysv and defaults configuration for Debian.
-function task_sysv_init_deb {
-    task defaults_deb
-    install -d -m 0755 "${DESTDIR}${initdir}"
-    install -m 0755 ext/debian/<%= EZBake::Config[:project] %>.init_script "${DESTDIR}${initdir}/<%= EZBake::Config[:project] %>"
-    install -d -m 0755 "${DESTDIR}${rundir}"
-}
-
-# Install the systemd/sysv and defaults configuration for Debian.
+# Install the systemd and defaults configuration for Debian.
 function task_systemd_deb {
-    task sysv_init_deb
+    task defaults_deb
     install -d -m 0755 "${DESTDIR}${unitdir_debian}"
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.service_file "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
     install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
