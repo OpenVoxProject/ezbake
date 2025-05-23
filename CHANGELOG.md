@@ -10,6 +10,7 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 * Use systemd's PrivateTmp feature for improved security
 * Test ezbake on Java 11, 17 and 21
 * Drop sysvinit support on Debian
+* Drop service wrappers and natively use systemd
 
 ## [2.6.1]
 * Fix the ability to add a resources directory to a project with :include-dir by copying the resources to the staging directory directly.

@@ -150,7 +150,6 @@ shared_opts = Array('')
 termini_opts = Array('')
 
 options.app_logdir = "/var/log/puppetlabs/#{options.realname}"
-options.app_rundir = "/var/run/puppetlabs/#{options.realname}"
 options.app_prefix = "/opt/puppetlabs/server/apps/#{options.realname}"
 options.app_data = "/opt/puppetlabs/server/data/#{options.realname}"
 
@@ -160,7 +159,6 @@ if options.output_type == 'rpm'
   shared_opts << "--rpm-digest sha256"
   shared_opts << "--rpm-rpmbuild-define 'rpmversion #{options.version}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_logdir #{options.app_logdir}'"
-  fpm_opts << "--rpm-rpmbuild-define '_app_rundir #{options.app_rundir}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
@@ -200,7 +198,6 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_systemd_sles #{options.systemd_sles}'"
   fpm_opts << "--rpm-rpmbuild-define '_sysconfdir /etc'"
   fpm_opts << "--rpm-rpmbuild-define '_prefix #{options.app_prefix}'"
-  fpm_opts << "--rpm-rpmbuild-define '_rundir /var/run'"
   fpm_opts << "--rpm-rpmbuild-define '__jar_repack 0'"
 
   shared_opts << "--rpm-dist #{options.dist}"
@@ -231,7 +228,6 @@ if options.output_type == 'rpm'
 
   fpm_opts << "--directories #{options.app_logdir}"
   fpm_opts << "--directories /etc/puppetlabs/#{options.realname}"
-  fpm_opts << "--directories #{options.app_rundir}"
   shared_opts << "--rpm-auto-add-directories"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/puppetlabs"
   shared_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs"
@@ -243,9 +239,7 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd/system"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/logrotate.d"
-  fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/tmpfiles.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/log/puppetlabs"
-  fpm_opts << "--rpm-auto-add-exclude-directories /var/run/puppetlabs"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet/lib"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet/lib/ruby"
@@ -265,7 +259,6 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-attr 750,#{options.user},#{options.group}:/etc/puppetlabs/#{options.realname}"
   fpm_opts << "--rpm-attr 750,#{options.user},#{options.group}:#{options.app_logdir}"
   fpm_opts << "--rpm-attr -,#{options.user},#{options.group}:#{options.app_data}"
-  fpm_opts << "--rpm-attr 755,#{options.user},#{options.group}:#{options.app_rundir}"
 
   fpm_opts << "--edit"
   fpm_opts << "--category 'System Environment/Daemons'"
