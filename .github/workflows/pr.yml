@@ -28,9 +28,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-      - name: setup lein
-        run: |
-          mkdir -p local/bin
-          curl --output local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/2.9.1/bin/lein
-          chmod +x local/bin/lein
-      - run: local/bin/lein test
+      # install clojure tools
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          # Install just one or all simultaneously
+          # The value must indicate a particular version of the tool, or use 'latest'
+          # to always provision the latest version
+          lein: latest # Leiningen
+      - run: lein test
