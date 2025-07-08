@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -17,9 +20,6 @@ jobs:
           - '11'
           - '17'
           - '21'
-    env:
-      LEIN_HOME: local
-
     name: Java ${{ matrix.java }} tests
     steps:
       - uses: actions/checkout@v4
@@ -28,9 +28,17 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-      - name: setup lein
-        run: |
-          mkdir -p local/bin
-          curl --output local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/2.9.1/bin/lein
-          chmod +x local/bin/lein
-      - run: local/bin/lein test
+      # install clojure tools
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          lein: latest # Leiningen
+      - run: lein test
+
+  tests:
+    needs:
+      - test
+    runs-on: ubuntu-24.04
+    name: Test suite
+    steps:
+      - run: echo Test suite completed
