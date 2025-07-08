@@ -656,8 +656,6 @@ Additional uberjar dependencies:
      :stop-timeout                       (-> (get-local :stop-timeout 60)
                                              str as-ruby-literal)
      :open-file-limit                    (as-ruby-literal (get-local :open-file-limit nil))
-     :is-pe-build                        (-> (= "pe" (get-local :build-type "foss"))
-                                             as-ruby-literal)
      :main-namespace                     (local->ruby :main-namespace
                                                       "puppetlabs.trapperkeeper.main")
      :java-args                          (local->ruby :java-args
@@ -720,7 +718,6 @@ Additional uberjar dependencies:
                             (deputils/generate-manifest-string lein-project))
        :uberjar-name (:uberjar-name lein-project)
        :additional-uberjars (mapv (fn [filename] {:uberjar filename}) additional-uberjars)
-       :is-pe-build (format "%s" (= (get-local-ezbake-var lein-project :build-type "foss") "pe"))
        :repo-name (format "%s" (get-local-ezbake-var lein-project :repo-target ""))
        :nonfinal-repo-name (format "%s" (get-local-ezbake-var lein-project :nonfinal-repo-target ""))})))
 

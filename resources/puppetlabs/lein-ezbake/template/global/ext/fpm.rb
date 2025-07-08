@@ -12,7 +12,6 @@ options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
 options.release = 1
 options.platform_version = 0
-options.is_pe = false
 options.replaces = {}
 options.additional_dependencies = []
 options.user = 'puppet'
@@ -48,9 +47,6 @@ OptionParser.new do |opts|
   end
   opts.on('--platform-version VERSION', Integer, 'VERSION of the puppet platform this builds for') do |v|
     options.platform_version = v
-  end
-  opts.on('--[no-]enterprise-build', 'Whether or not this is a PE build') do |e|
-    options.is_pe = e
   end
   opts.on('--replaces <PKG,VERSION>', Array, 'PKG and VERSION replaced by this package. Can be passed multiple times.') do |pkg,ver|
     options.replaces[pkg] = ver
@@ -165,23 +161,19 @@ if options.output_type == 'rpm'
   if options.operating_system == :fedora # all supported fedoras are systemd
     options.systemd_el = 1
   elsif options.operating_system == :amazon
-    if ! options.is_pe
-      fpm_opts << "--depends tzdata-java"
-      options.java = '(java-17-amazon-corretto-headless or java-11-amazon-corretto-headless)'
-    end
+    fpm_opts << "--depends tzdata-java"
+    options.java = '(java-17-amazon-corretto-headless or java-11-amazon-corretto-headless)'
 
     options.systemd_el = 1
   elsif options.operating_system == :el
-    if ! options.is_pe
-      options.java =
-        if options.os_version == 7
-          'java-11-openjdk-headless'
-        elsif options.os_version >= 8
-          'java-17-openjdk-headless'
-        else
-          fail "Unrecognized el os version #{options.os_version}"
-        end
-    end
+    options.java =
+      if options.os_version == 7
+        'java-11-openjdk-headless'
+      elsif options.os_version >= 8
+        'java-17-openjdk-headless'
+      else
+        fail "Unrecognized el os version #{options.os_version}"
+      end
 
     options.systemd_el = 1
   elsif options.operating_system == :redhatfips
@@ -189,9 +181,7 @@ if options.output_type == 'rpm'
   elsif options.operating_system == :sles
     options.systemd_sles = 1
     options.sles = 1
-    if ! options.is_pe
-      options.java = 'java-11-openjdk-headless'
-    end
+    options.java = 'java-11-openjdk-headless'
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
@@ -269,19 +259,13 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  if ! options.is_pe
-    options.java = 'openjdk-17-jre-headless | openjdk-11-jre-headless'
-  end
+  options.java = 'openjdk-17-jre-headless | openjdk-11-jre-headless'
 
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
   fpm_opts << '--deb-build-depends mawk'
   fpm_opts << '--deb-build-depends lsb-release'
-  if options.is_pe
-    fpm_opts << '--deb-build-depends puppet-agent'
-  else
-    fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
-  end
+  fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
   fpm_opts << '--deb-priority optional'
   fpm_opts << '--category utils'
   options.deb_interest_triggers.each do |trigger|
@@ -344,13 +328,7 @@ if options.name == "openvoxdb"
   termini_opts << "--conflicts 'puppetdb-termini'"
 end
 
-if options.is_pe
-  fpm_opts << "--depends pe-java"
-  fpm_opts << "--depends pe-puppet-enterprise-release"
-  fpm_opts << "--depends pe-bouncy-castle-jars"
-else
-  fpm_opts << "--depends '#{options.java}'"
-end
+fpm_opts << "--depends '#{options.java}'"
 
 fpm_opts << "--depends bash"
 fpm_opts << "--depends net-tools"
