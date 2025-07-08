@@ -37,7 +37,6 @@
                     :main-namespace "'puppetlabs.trapperkeeper.main'"
                     :debian-interested-upgrade-triggers ()
                     :packaging-version "'1'"
-                    :is-pe-build "false"
                     :reload-timeout "'120'"
                     :bootstrap-source "'bootstrap-cfg'"
                     :package-name "'dummy'"

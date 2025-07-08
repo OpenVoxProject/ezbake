@@ -108,10 +108,6 @@ params+=('--replaces' "<%= package -%>,<%= version -%>")
 params+=('--create-dir' '<%= directory -%>')
 <% end %>
 
-<% if EZBake::Config[:is_pe_build] -%>
-params+=('--enterprise-build')
-<% end -%>
-
 if [[ "$os" = 'el' || "$os" = 'sles' || "$os" = 'fedora' || "$os" = 'redhatfips' || "$os" = 'amazon' ]]; then
         # pull in rpm dependencies
         <%EZBake::Config[:redhat][:additional_dependencies].each do |dep| -%>
