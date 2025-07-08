@@ -11,6 +11,7 @@ This changelog adheres to [Keep a CHANGELOG](http://keepachangelog.com/).
 * Test ezbake on Java 11, 17 and 21
 * Drop sysvinit support on Debian
 * Drop service wrappers and natively use systemd
+* Remove /etc/needrestart/conf.d/ config for deb packages to restart services on Java Updates
 
 ## [2.6.1]
 * Fix the ability to add a resources directory to a project with :include-dir by copying the resources to the staging directory directly.

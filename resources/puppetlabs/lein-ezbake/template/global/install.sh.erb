@@ -32,7 +32,6 @@ dest_apps_dir="${DESTDIR}${app_prefix}"
 app_data=${app_data:=/opt/puppetlabs/server/data/${real_name}}
 app_logdir=${app_logdir:=/var/log/puppetlabs/${real_name}}
 system_config_dir=${system_config_dir:=${app_prefix}/config}
-needrestart_confdir=${needrestart_dir:=/etc/needrestart/conf.d}
 
 
 ##################
@@ -235,8 +234,6 @@ function task_systemd_deb {
     task defaults_deb
     install -d -m 0755 "${DESTDIR}${unitdir_debian}"
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.service_file "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
-    install -d -m 0755 "${DESTDIR}${needrestart_confdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.needrestart.conf "${DESTDIR}${needrestart_confdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 function task_service_account {
