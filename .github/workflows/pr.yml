@@ -40,3 +40,11 @@ jobs:
           # to always provision the latest version
           lein: latest # Leiningen
       - run: lein test
+
+  tests:
+    needs:
+      - test
+    runs-on: ubuntu-24.04
+    name: Test suite
+    steps:
+      - run: echo Test suite completed
