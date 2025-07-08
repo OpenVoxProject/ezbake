@@ -167,14 +167,13 @@ if options.output_type == 'rpm'
 
     options.systemd_el = 1
   elsif options.operating_system == :el
-    options.java =
-      if options.os_version == 7
-        'java-11-openjdk-headless'
-      elsif options.os_version >= 8
-        'java-17-openjdk-headless'
-      else
-        fail "Unrecognized el os version #{options.os_version}"
-      end
+    if options.os_version == 7
+      options.java = 'java-11-openjdk-headless'
+    elsif options.os_version >= 8
+      options.java = 'java-17-openjdk-headless'
+    else
+      fail "Unrecognized el os version #{options.os_version}"
+    end
 
     options.systemd_el = 1
   elsif options.operating_system == :redhatfips
