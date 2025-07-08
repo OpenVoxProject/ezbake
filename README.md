@@ -248,15 +248,6 @@ infrastructure, see the `local-build` option below. Starting in version 1.6.0
 be set in the `JENKINS_USER_AUTH` environment variable to either '<job token>'
 or '<ldap username>:<personal auth token>'.
 
-#### `build` for PE
-
-For PE builds, you need to set an environment variable PE_VER to reflect the
-version of PE you're building a package for.  e.g.:
-
-```shell
-PE_VER=2016.3 lein with-profile ezbake ezbake build
-```
-
 #### `build` with a different profile
 
 ```shell

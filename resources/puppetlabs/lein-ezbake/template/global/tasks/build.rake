@@ -36,17 +36,9 @@ namespace :pl do
         Pkg::Util::Execution.success?(exitstatus) or raise "Error running packaging: #{stdout}\n#{stderr}"
         puts "#{stdout}\n#{stderr}"
 
-        # I'm so sorry
-        # These paths are hard-coded in packaging, so hard code here too.
-        # When everything is moved to artifactory this should be able
-        # to be fixed. --MMR, 2017-08-30
-        if Pkg::Config.build_pe
-          platform_path = "pe/rpm/#{os}-#{ver}-"
-        else
-          # carry forward defaults from mock.rake
-          repo = Pkg::Config.yum_repo_name || 'products'
-          platform_path = "#{os}/#{ver}/#{repo}/"
-        end
+        # carry forward defaults from mock.rake
+        repo = Pkg::Config.yum_repo_name || 'products'
+        platform_path = "#{os}/#{ver}/#{repo}/"
 
         # We want to include the arches for amazon/el/sles/fedora/redhatfips paths
         ['x86_64', 'i386'].each do |arch|
@@ -64,16 +56,10 @@ namespace :pl do
         repo = Pkg::Config.apt_repo_name || ''
         platform = cow.split('-')[1..-2].join('-')
 
-        # Keep on keepin' on with hardcoded paths in packaging
-        # Hopefully this goes away with artifactory.
-        #  --MMR, 2017-08-30
-        platform_path = "pe/deb/#{platform}"
-        unless Pkg::Config.build_pe
-          # get rid of the trailing slash if repo = ''
-          platform_path = "deb/#{platform}/#{repo}".sub(/\/$/, '')
-        end
+        # get rid of the trailing slash if repo = ''
+        platform_path = "deb/#{platform}/#{repo}".sub(/\/$/, '')
 
-        FileUtils.mkdir_p("#{pkg_path}/#{platform_path}") unless File.directory?("#{pkg_path}/#{platform_path}")
+        FileUtils.mkdir_p("#{pkg_path}/#{platform_path}")
         # there's no differences in packaging for deb vs ubuntu so picking debian
         # if that changes we'll need to fix that
         puts "===================================="
@@ -136,14 +122,6 @@ namespace :pl do
         ]
       }
 
-      if Pkg::Config.build_pe
-        Pkg::Util.check_var('PE_VER', ENV['PE_VER'])
-        parameter_json[:parameter] << {
-          name: 'PE_VER',
-          value: ENV['PE_VER']
-        }
-      end
-
       curl_opts << %(--form json='#{parameter_json.to_json}')
       curl_url = "#{args[:job_url]}/build"
 
@@ -163,13 +141,8 @@ namespace :pl do
 
     desc "trigger jenkins packaging job with local auth"
     task :trigger_build_local_auth => "pl:fetch" do
-      if Pkg::Config.build_pe
-        jenkins_hostname = 'jenkins-enterprise.delivery.puppetlabs.net'
-        stream = 'enterprise'
-      else
-        jenkins_hostname = 'jenkins-platform.delivery.puppetlabs.net'
-        stream = 'platform'
-      end
+      jenkins_hostname = 'jenkins-platform.delivery.puppetlabs.net'
+      stream = 'platform'
       job_url = "https://#{jenkins_hostname}/job/#{stream}_various-packaging-jobs_packaging-os-clj_lein-ezbake-generic"
 
       begin

@@ -16,7 +16,6 @@ options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
 options.release = 1
 options.platform_version = 0
-options.is_pe = false
 options.replaces = {}
 options.additional_dependencies = []
 options.user = 'puppet'
@@ -52,9 +51,6 @@ OptionParser.new do |opts|
   end
   opts.on('--platform-version VERSION', Integer, 'VERSION of the puppet platform this builds for') do |v|
     options.platform_version = v
-  end
-  opts.on('--[no-]enterprise-build', 'Whether or not this is a PE build') do |e|
-    options.is_pe = e
   end
   opts.on('--replaces <PKG,VERSION>', Array, 'PKG and VERSION replaced by this package. Can be passed multiple times.') do |pkg,ver|
     options.replaces[pkg] = ver
@@ -307,19 +303,13 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  if ! options.is_pe
-    options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless'
-  end
+  options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless'
 
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
   fpm_opts << '--deb-build-depends mawk'
   fpm_opts << '--deb-build-depends lsb-release'
-  if options.is_pe
-    fpm_opts << '--deb-build-depends puppet-agent'
-  else
-    fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
-  end
+  fpm_opts << '--deb-build-depends "ruby | ruby-interpreter"'
   fpm_opts << '--deb-priority optional'
   fpm_opts << '--category utils'
   options.deb_interest_triggers.each do |trigger|
@@ -382,13 +372,7 @@ if options.name == "openvoxdb"
   termini_opts << "--conflicts 'puppetdb-termini'"
 end
 
-if options.is_pe
-  fpm_opts << "--depends pe-java"
-  fpm_opts << "--depends pe-puppet-enterprise-release"
-  fpm_opts << "--depends pe-bouncy-castle-jars"
-else
-  fpm_opts << "--depends '#{options.java}'"
-end
+fpm_opts << "--depends '#{options.java}'"
 
 fpm_opts << "--depends bash"
 fpm_opts << "--depends net-tools"
