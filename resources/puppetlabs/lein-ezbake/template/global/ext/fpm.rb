@@ -10,6 +10,7 @@ options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
+options.java_bin = '/usr/bin/java'
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
@@ -166,14 +167,15 @@ if options.output_type == 'rpm'
 
     options.systemd_el = 1
   elsif options.operating_system == :el
-    options.java =
-      if options.os_version == 7
-        'java-11-openjdk-headless'
-      elsif options.os_version >= 8
-        'java-17-openjdk-headless'
-      else
-        fail "Unrecognized el os version #{options.os_version}"
-      end
+    if options.os_version == 7
+      options.java = 'jre-11-headless'
+      options.java_bin = '/usr/lib/jvm/jre-11/bin/java'
+    elsif options.os_version >= 8
+      options.java = 'jre-17-headless'
+      options.java_bin = '/usr/lib/jvm/jre-17/bin/java'
+    else
+      fail "Unrecognized el os version #{options.os_version}"
+    end
 
     options.systemd_el = 1
   elsif options.operating_system == :redhatfips
