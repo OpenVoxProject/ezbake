@@ -134,7 +134,7 @@ if options.sources.empty?
                     when :amazon, :fedora, :sles, :el, :redhatfips
                       ['etc', 'opt', 'usr', 'var']
                     when :debian, :ubuntu
-                      ['etc', 'lib', 'opt', 'usr', 'var']
+                      ['etc', 'lib', 'opt', 'var']
                     else
                       fail "I don't know what your default sources should be, pass it on the command line!"
                     end
