@@ -333,7 +333,6 @@ end
 fpm_opts << "--depends '#{options.java}'"
 
 fpm_opts << "--depends bash"
-fpm_opts << "--depends net-tools"
 fpm_opts << "--depends /usr/bin/which" if options.output_type == 'rpm'
 fpm_opts << "--depends adduser" if options.output_type == 'deb'
 fpm_opts << "--depends procps"

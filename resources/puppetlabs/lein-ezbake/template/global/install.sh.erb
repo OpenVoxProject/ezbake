@@ -122,7 +122,6 @@ function task_install {
     install -d -m 0755 "${dest_apps_dir}"
     install -d -m 0770 "${DESTDIR}${app_data}"
     install -m 0644 <%= EZBake::Config[:uberjar_name] %> "${dest_apps_dir}"
-    install -m 0755 ext/ezbake-functions.sh "${dest_apps_dir}"
     install -m 0644 ext/ezbake.manifest "${dest_apps_dir}"
     install -d -m 0755 "${DESTDIR}${projconfdir}/conf.d"
 
