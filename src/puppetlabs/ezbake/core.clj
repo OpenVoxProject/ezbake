@@ -89,6 +89,7 @@
    (schema/optional-key :main-namespace) schema/Str
    (schema/optional-key :java-args) schema/Str
    (schema/optional-key :java-args-cli) schema/Str
+   (schema/optional-key :java-bin) schema/Str
    (schema/optional-key :tk-args) schema/Str
    (schema/optional-key :redhat-postinst-install-triggers) RPMTriggers
    (schema/optional-key :redhat-postinst-upgrade-triggers) RPMTriggers
@@ -661,6 +662,8 @@ Additional uberjar dependencies:
      :java-args                          (local->ruby :java-args
                                                       "-Xmx192m")
      :java-args-cli                      (local->ruby :java-args-cli "")
+     :java-bin                           (local->ruby :java-bin
+                                                      "/usr/bin/java")
      :tk-args                            (local->ruby :tk-args "")
      :bootstrap-source                   (-> (get-local :bootstrap-source :bootstrap-cfg)
                                              name as-ruby-literal)
