@@ -52,12 +52,12 @@ ExecStartPre=<%= action %>
 
 ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS $LOG_APPENDER \
   '-XX:OnOutOfMemoryError=kill -9 %p' -XX:+CrashOnOutOfMemoryError \
-  -XX:ErrorFile="$LOGS_DIRECTORY/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
-  -cp "$INSTALL_DIR/<%= EZBake::Config[:uberjar_name] %>" \
+  -XX:ErrorFile="${LOGS_DIRECTORY}/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
+  -cp "${INSTALL_DIR}/<%= EZBake::Config[:uberjar_name] %>" \
   clojure.main \
   -m <%= EZBake::Config[:main_namespace] %> \
-  --config "$CONFIG" \
-  --bootstrap-config "$BOOTSTRAP_CONFIG" \
+  --config "${CONFIG}" \
+  --bootstrap-config "${BOOTSTRAP_CONFIG}" \
   $TK_ARGS
 
 KillMode=process
