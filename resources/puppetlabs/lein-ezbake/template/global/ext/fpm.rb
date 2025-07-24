@@ -189,6 +189,34 @@ if options.output_type == 'rpm'
     options.java = 'java-11-openjdk-headless'
   end
 
+  # patch the sysconfig file so it has the correct JAVA_BIN
+  default_paths = [
+    "#{options.chdir}/etc/sysconfig/puppet*", # EL family
+    "#{options.chdir}/etc/default/puppet*",   # Debian family
+  ]
+  target = "JAVA_BIN=#{options.java_bin}"
+  Dir.glob(default_paths).each do |file_path|
+    lines = File.readlines(file_path).map do |line|
+      line.start_with?('JAVA_BIN=') ? target : line
+    end
+    File.write(file_path, lines.join)
+    puts "patched JAVA_BIN in #{file_path} to #{target}"
+  end
+
+  # patch the systemd unit file to have the correct JAVA_BIN
+  paths = [
+    "#{options.chdir}/usr/lib/systemd/system/puppet*.service",
+    "#{options.chdir}/lib/systemd/system/puppet*.service",
+  ]
+  searchstring = '/usr/bin/java'
+  Dir.glob(paths).each do |file_path|
+    lines = File.readlines(file_path).map do |line|
+      line.include?(searchstring) ? line.sub(searchstring, options.java_bin) : line
+    end
+    File.write(file_path, lines.join)
+    puts "patched JAVA_BIN in #{file_path} from #{searchstring} to #{options.java_bin}"
+  end
+
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
   fpm_opts << "--rpm-rpmbuild-define '_systemd_sles #{options.systemd_sles}'"
   fpm_opts << "--rpm-rpmbuild-define '_sysconfdir /etc'"
