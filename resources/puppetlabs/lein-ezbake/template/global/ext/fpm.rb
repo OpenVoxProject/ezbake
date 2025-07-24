@@ -204,12 +204,12 @@ if options.output_type == 'rpm'
   end
 
   # patch the systemd unit file to have the correct JAVA_BIN
-  paths = [
-    "#{options.chdir}/usr/lib/systemd/system/puppet*.service",
-    "#{options.chdir}/lib/systemd/system/puppet*.service",
+  systemd_paths = [
+    "#{options.chdir}/usr/lib/systemd/system/puppet*.service", # EL family
+    "#{options.chdir}/lib/systemd/system/puppet*.service",     # Debian family
   ]
   searchstring = '/usr/bin/java'
-  Dir.glob(paths).each do |file_path|
+  Dir.glob(systemd_paths).each do |file_path|
     lines = File.readlines(file_path).map do |line|
       line.include?(searchstring) ? line.sub(searchstring, options.java_bin) : line
     end
