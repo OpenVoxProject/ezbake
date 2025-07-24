@@ -180,30 +180,26 @@ if options.output_type == 'rpm'
     options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :amazon
-    if ! options.is_pe
-      fpm_opts << "--depends tzdata-java"
-      options.java = '(java-17-amazon-corretto-headless or java-11-amazon-corretto-headless)'
+    fpm_opts << "--depends tzdata-java"
+    options.java = '(java-17-amazon-corretto-headless or java-11-amazon-corretto-headless)'
+    options.systemd = 1
+    options.systemd_el = 1
+  elsif options.operating_system == :el
+    if options.os_version == 7
+      options.java = 'jre-11-headless'
+      options.java_bin = '/usr/lib/jvm/jre-11/bin/java'
+    elsif (8..9).include?(options.os_version)
+      options.java = 'jre-17-headless'
+      options.java_bin = '/usr/lib/jvm/jre-17/bin/java'
+    elsif options.os_version == 10
+      options.java = 'jre-21-headless'
+      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+    else
+      fail "Unrecognized el os version #{options.os_version}"
     end
 
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :el && options.os_version >= 7 # systemd el
-    if ! options.is_pe
-      options.java =
-        if options.os_version == 7
-          'java-11-openjdk-headless'
-        elsif options.os_version >= 8
-          'java-17-openjdk-headless'
-        else
-          fail "Unrecognized el os version #{options.os_version}"
-        end
-    end
-
-    options.systemd = 1
-    options.systemd_el = 1
-  elsif options.operating_system == :el # old el
-    options.sysvinit = 1
-    options.old_el = 1
   elsif options.operating_system == :redhatfips && options.os_version >= 7 # systemd redhatfips
     options.systemd = 1
     options.systemd_el = 1
