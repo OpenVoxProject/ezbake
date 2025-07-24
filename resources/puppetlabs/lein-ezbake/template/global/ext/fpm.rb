@@ -210,10 +210,9 @@ if options.output_type == 'rpm'
   ]
   searchstring = '/usr/bin/java'
   Dir.glob(systemd_paths).each do |file_path|
-    lines = File.readlines(file_path).map do |line|
-      line.include?(searchstring) ? line.sub(searchstring, options.java_bin) : line
-    end
-    File.write(file_path, lines.join)
+    unit = File.read(file_path)
+    new_content = unit.gsub(/(ExecStart=)(\S+)/) { "#{Regexp.last_match(1)}#{options.java_bin}" }
+    File.write(file_path, new_content)
     puts "patched JAVA_BIN in #{file_path} from #{searchstring} to #{options.java_bin}"
   end
 
