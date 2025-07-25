@@ -307,21 +307,40 @@ elsif options.output_type == 'deb'
   end
 end
 
+# because this hacky hack is hacky, we only run it if the desired java version is different compared to our defaults
+# we want to prevent accidents here
 if options.java_bin != EZBake::Config[:java_bin]
-  # patch the environment and systemd unit files so it has the correct JAVA_BIN
-  paths = [
+  # also why don't we use `File.write(path, content.gsub(EZBake::Config[:java_bin], options.java_bin))`
+  # ezbake renders the environment and systemd files once.
+  # Afterwards we iterate on all OSes we want to create packages for.
+  # fpm.rb is executed for each OS. that means it's not a clean build environment,
+  # we iterate below patch multiple times on the same file
+
+  # patch the sysconfig file so it has the correct JAVA_BIN
+  default_paths = [
     "#{options.chdir}/etc/sysconfig/puppet*", # EL family
     "#{options.chdir}/etc/default/puppet*",   # Debian family
+  ]
+  target = "JAVA_BIN=#{options.java_bin}"
+  Dir.glob(default_paths).each do |file_path|
+    lines = File.readlines(file_path).map do |line|
+      line.start_with?('JAVA_BIN=') ? target : line
+    end
+    File.write(file_path, lines.join)
+    if options.debug
+      puts "patched JAVA_BIN in #{file_path} to #{options.java_bin}"
+    end
+  end
+
+  # patch the systemd unit file to have the correct JAVA_BIN
+  systemd_paths = [
     "#{options.chdir}/usr/lib/systemd/system/puppet*.service", # EL family
     "#{options.chdir}/lib/systemd/system/puppet*.service",     # Debian family
   ]
-  # we are using globbing here to find all related files,
-  # but also try to limit this down as much as possible.
-  # This whole hack is quite hacky and we want to avoid side effects at all costs
-  # ezbake is used for openvoxdb and openvox-server projects, so we need to match both names
-  Dir.glob(paths).each do |path|
-    content = File.read(path)
-    File.write(path, content.gsub(EZBake::Config[:java_bin], options.java_bin))
+  Dir.glob(systemd_paths).each do |file_path|
+    unit = File.read(file_path)
+    new_content = unit.gsub(/(ExecStart=)(\S+)/) { "#{Regexp.last_match(1)}#{options.java_bin}" }
+    File.write(file_path, new_content)
     if options.debug
       puts "patched JAVA_BIN in #{file_path} to #{options.java_bin}"
     end
