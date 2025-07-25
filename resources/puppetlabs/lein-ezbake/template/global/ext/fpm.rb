@@ -4,13 +4,38 @@ require 'open3'
 require 'optparse'
 require 'ostruct'
 
+# we need to initialize it here, because our begin/else block uses options
 options = OpenStruct.new
+
+# ezbake.rb is rendered from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+#
+# inside the build container, fpm.rb is at:
+# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
+# ezbake:
+# /code/target/staging/ezbake.rb
+#
+# we do this hula hoop jump because in our build process the ezbake.rb exists
+# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
+# fpm.rb is executed while we build the packages. This is the same process as
+# compiling the jar and rendering ezbake from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
+#
+# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
+begin
+  require_relative '../../ezbake.rb'
+rescue LoadError
+  options.java_bin = '/usr/bin/java'
+else
+  options.java_bin = EZBake::Config[:java_bin]
+end
+
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
-options.java_bin = '/usr/bin/java'
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
@@ -208,12 +233,11 @@ if options.output_type == 'rpm'
     "#{options.chdir}/usr/lib/systemd/system/puppet*.service", # EL family
     "#{options.chdir}/lib/systemd/system/puppet*.service",     # Debian family
   ]
-  searchstring = '/usr/bin/java'
   Dir.glob(systemd_paths).each do |file_path|
     unit = File.read(file_path)
     new_content = unit.gsub(/(ExecStart=)(\S+)/) { "#{Regexp.last_match(1)}#{options.java_bin}" }
     File.write(file_path, new_content)
-    puts "patched JAVA_BIN in #{file_path} from #{searchstring} to #{options.java_bin}"
+    puts "patched JAVA_BIN in #{file_path} to #{options.java_bin}"
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
