@@ -214,32 +214,6 @@ if options.output_type == 'rpm'
     options.java = 'java-11-openjdk-headless'
   end
 
-  # patch the sysconfig file so it has the correct JAVA_BIN
-  default_paths = [
-    "#{options.chdir}/etc/sysconfig/puppet*", # EL family
-    "#{options.chdir}/etc/default/puppet*",   # Debian family
-  ]
-  target = "JAVA_BIN=#{options.java_bin}"
-  Dir.glob(default_paths).each do |file_path|
-    lines = File.readlines(file_path).map do |line|
-      line.start_with?('JAVA_BIN=') ? target : line
-    end
-    File.write(file_path, lines.join)
-    puts "patched JAVA_BIN in #{file_path} to #{target}"
-  end
-
-  # patch the systemd unit file to have the correct JAVA_BIN
-  systemd_paths = [
-    "#{options.chdir}/usr/lib/systemd/system/puppet*.service", # EL family
-    "#{options.chdir}/lib/systemd/system/puppet*.service",     # Debian family
-  ]
-  Dir.glob(systemd_paths).each do |file_path|
-    unit = File.read(file_path)
-    new_content = unit.gsub(/(ExecStart=)(\S+)/) { "#{Regexp.last_match(1)}#{options.java_bin}" }
-    File.write(file_path, new_content)
-    puts "patched JAVA_BIN in #{file_path} to #{options.java_bin}"
-  end
-
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
   fpm_opts << "--rpm-rpmbuild-define '_systemd_sles #{options.systemd_sles}'"
   fpm_opts << "--rpm-rpmbuild-define '_sysconfdir /etc'"
@@ -331,6 +305,32 @@ elsif options.output_type == 'deb'
    options.deb_activate_triggers.each do |trigger|
     fpm_opts << "--deb-activate #{trigger}"
   end
+end
+
+# patch the sysconfig file so it has the correct JAVA_BIN
+default_paths = [
+  "#{options.chdir}/etc/sysconfig/puppet*", # EL family
+  "#{options.chdir}/etc/default/puppet*",   # Debian family
+]
+target = "JAVA_BIN=#{options.java_bin}"
+Dir.glob(default_paths).each do |file_path|
+  lines = File.readlines(file_path).map do |line|
+    line.start_with?('JAVA_BIN=') ? target : line
+  end
+  File.write(file_path, lines.join)
+  puts "patched JAVA_BIN in #{file_path} to #{target}"
+end
+
+# patch the systemd unit file to have the correct JAVA_BIN
+systemd_paths = [
+  "#{options.chdir}/usr/lib/systemd/system/puppet*.service", # EL family
+  "#{options.chdir}/lib/systemd/system/puppet*.service",     # Debian family
+]
+Dir.glob(systemd_paths).each do |file_path|
+  unit = File.read(file_path)
+  new_content = unit.gsub(/(ExecStart=)(\S+)/) { "#{Regexp.last_match(1)}#{options.java_bin}" }
+  File.write(file_path, new_content)
+  puts "patched JAVA_BIN in #{file_path} to #{options.java_bin}"
 end
 
 # generic options!
