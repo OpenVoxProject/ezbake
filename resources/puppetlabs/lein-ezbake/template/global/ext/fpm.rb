@@ -5,12 +5,36 @@ require 'optparse'
 require 'ostruct'
 
 options = OpenStruct.new
+
+# ezbake.rb is rendered from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+#
+# inside the build container, fpm.rb is at:
+# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
+# ezbake:
+# /code/target/staging/ezbake.rb
+#
+# we do this hula hoop jump because in our build process the ezbake.rb exists
+# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
+# fpm.rb is executed while we build the packages. This is the same process as
+# compiling the jar and rendering ezbake from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
+#
+# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
+begin
+  require_relative '../../ezbake'
+rescue LoadError
+  options.java_bin = '/usr/bin/java'
+else
+  options.java_bin = EZBake::Config[:java_bin]
+end
+
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
-options.java_bin = '/usr/bin/java'
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
