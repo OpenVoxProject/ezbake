@@ -1,4 +1,4 @@
-(defproject puppetlabs/lein-ezbake "2.6.3-SNAPSHOT-openvox"
+(defproject puppetlabs/lein-ezbake "3.0.0"
   :description "A system for building packages for trapperkeeper-based applications"
   :url "https://github.com/openvoxproject/ezbake"
   :license {:name "Apache License 2.0"
