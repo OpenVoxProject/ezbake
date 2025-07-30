@@ -21,6 +21,7 @@ Wants=<%= EZBake::Config[:start_after].map {|dep| "#{dep}.service" }.join(" ") %
 [Service]
 Type=exec
 LogsDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
+RuntimeDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
 EnvironmentFile=/etc/default/<%= EZBake::Config[:project] %>
 User=<%= EZBake::Config[:user] %>
 TimeoutStartSec=<%= EZBake::Config[:start_timeout] %>
