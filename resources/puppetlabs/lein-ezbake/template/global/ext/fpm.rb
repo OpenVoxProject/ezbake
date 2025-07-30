@@ -4,13 +4,71 @@ require 'open3'
 require 'optparse'
 require 'ostruct'
 
+def patch_files(options)
+  if options.java_bin == EZBake::Config[:java_bin]
+    yield
+  else
+    suffix = '.backup'
+    [
+      # Debian
+      '/etc/default/puppet*',
+      '/lib/systemd/system/puppet*.service',
+      # RPM
+      '/usr/lib/systemd/system/puppet*.service',
+      '/etc/sysconfig/puppet*',
+    ].each do |path|
+      Dir.glob(File.join(options.chdir, path)).each do |real_path|
+        content = File.read(real_path)
+        next unless content.include?(EZBake::Config[:java_bin])
+
+        warn "Copying #{real_path} to #{real_path}#{suffix}"
+        FileUtils.cp(real_path, "#{real_path}#{suffix}")
+        warn "Patching #{real_path} to use #{options.java_bin}"
+        File.write(real_path, content.gsub(EZBake::Config[:java_bin], options.java_bin))
+      end
+    end
+
+    yield
+
+    Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
+      original = File.join(File.dirname(path), File.basename(path, suffix))
+      warn "Restoring #{path} to #{original}"
+      FileUtils.mv(path, original)
+    end
+  end
+end
+
 options = OpenStruct.new
+
+# ezbake.rb is rendered from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+#
+# inside the build container, fpm.rb is at:
+# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
+# ezbake:
+# /code/target/staging/ezbake.rb
+#
+# we do this hula hoop jump because in our build process the ezbake.rb exists
+# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
+# fpm.rb is executed while we build the packages. This is the same process as
+# compiling the jar and rendering ezbake from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
+#
+# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
+begin
+  require_relative '../../ezbake'
+rescue LoadError
+  options.java_bin = '/usr/bin/java'
+else
+  options.java_bin = EZBake::Config[:java_bin]
+end
+
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
 options.java = 'java-1.8.0-openjdk-headless'
-options.java_bin = '/usr/bin/java'
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
@@ -408,22 +466,24 @@ if options.debug
   puts "#{Dir.pwd}"
 end
 
-# fpm sends all output to stdout
-out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
-fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
-
-puts "#{out}"
-
-if options.termini
-  if options.debug
-    puts "=========================="
-    puts "FPM COMMAND"
-    puts "fpm #{termini_opts.join(' ')}"
-    puts "=========================="
-  end
-
+patch_files(options) do
   # fpm sends all output to stdout
-  out, _, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
-  fail "Error trying to run FPM for the termini for #{options.dist}!\n#{out}" unless stat.success?
+  out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
+  fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
+
   puts "#{out}"
+
+  if options.termini
+    if options.debug
+      puts "=========================="
+      puts "FPM COMMAND"
+      puts "fpm #{termini_opts.join(' ')}"
+      puts "=========================="
+    end
+
+    # fpm sends all output to stdout
+    out, _, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
+    fail "Error trying to run FPM for the termini for #{options.dist}!\n#{out}" unless stat.success?
+    puts "#{out}"
+  end
 end
