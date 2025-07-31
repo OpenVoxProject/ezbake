@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 
 restartfile="/opt/puppetlabs/server/data/<%= EZBake::Config[:real_name] %>/restartcounter"
-cli_defaults=${INSTALL_DIR}/cli/cli-defaults.sh
-
-if [ ! -e "${INSTALL_DIR}/ezbake-functions.sh" ]; then
-    echo "Unable to find ${INSTALL_DIR}/ezbake-functions.sh script, failing start." 1>&2
-    exit 1
+if [ ! -e "$restartfile" ]; then
+  user="${USER:-<%= EZBake::Config[:user] %>}"
+  group="${GROUP:-<%= EZBake::Config[:group] %>}"
+  printf '0' | usr/bin/install -D --owner=$user --group=$group --mode=0644 "$restartfile"
 fi
-
-. "${INSTALL_DIR}/ezbake-functions.sh"
-
-init_restart_file "$restartfile" || exit $?
 
 if !(echo "${@}" | grep -e "--debug" -q)
 then
@@ -19,8 +14,9 @@ fi
 
 CLASSPATH="${INSTALL_DIR}/<%= EZBake::Config[:uberjar_name] %>"
 
+cli_defaults="${INSTALL_DIR}/cli/cli-defaults.sh"
 if [ -e "$cli_defaults" ]; then
-  . $cli_defaults
+  . "$cli_defaults"
   if [ $? -ne 0 ]; then
     echo "Unable to initialize cli defaults, failing start." 1>&2
     exit 1
