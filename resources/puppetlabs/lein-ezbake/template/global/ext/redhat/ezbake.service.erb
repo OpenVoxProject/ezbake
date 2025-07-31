@@ -66,6 +66,7 @@ KillMode=process
 <% EZBake::Config[:redhat][:post_start_action].each do |action| -%>
 ExecStartPost=-<%= action %>
 <% end -%>
+ExecReload=kill -HUP $MAINPID
 SuccessExitStatus=143
 
 [Install]
