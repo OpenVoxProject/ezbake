@@ -22,7 +22,7 @@ jobs:
           - '21'
     name: Java ${{ matrix.java }} tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: setup java
         uses: actions/setup-java@v4
         with:
