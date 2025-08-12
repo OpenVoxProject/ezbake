@@ -32,6 +32,7 @@
 (deftest trivial-make-template-map-behavior
   (testing "keyword bootstrap-source value with hyphens is ok"
     (let [expected {:numeric-uid-gid "nil"
+                    :service-port "nil"
                     :debian-prerm "[]"
                     :config-files "[]"
                     :main-namespace "'puppetlabs.trapperkeeper.main'"
