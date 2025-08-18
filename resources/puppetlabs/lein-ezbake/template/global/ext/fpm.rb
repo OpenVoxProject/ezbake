@@ -433,6 +433,7 @@ termini_opts << "#{options.termini_sources.join(' ')}"
 
 if options.debug
   fpm_opts << '--debug'
+  fpm_opts << '--trace'
 end
 
 # FPM prepends %dir to the %files list entries if the file is a directory
