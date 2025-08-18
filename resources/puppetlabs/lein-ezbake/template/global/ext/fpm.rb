@@ -431,11 +431,6 @@ termini_opts.flatten!
 fpm_opts << "#{options.sources.join(' ')}"
 termini_opts << "#{options.termini_sources.join(' ')}"
 
-if options.debug
-  fpm_opts << '--debug'
-  fpm_opts << '--trace'
-end
-
 # FPM prepends %dir to the %files list entries if the file is a directory
 # https://github.com/jordansissel/fpm/blob/a996a8a404f012a4cdc95bce4b1e32b1982839e6/templates/rpm.erb#L249-L250
 # This prevents us from recursively setting ownership/group on files within a directory
@@ -487,8 +482,8 @@ patch_files(options) do
     end
 
     # fpm sends all output to stdout
-    out, _, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
-    fail "Error trying to run FPM for the termini for #{options.dist}!\n#{out}" unless stat.success?
+    out, err, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
+    fail "Error trying to run FPM for the termini for #{options.dist}!\n stderr: #{err}\n stdout: #{out}\n" unless stat.success?
     puts "#{out}"
   end
 end
