@@ -468,7 +468,7 @@ end
 
 patch_files(options) do
   # fpm sends all output to stdout
-  out, err, stat = Open3.capture3("#{fpm_editor} fpm --debug --log debug #{fpm_opts.join(' ')}")
+  out, err, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
   fail "Error trying to run FPM for #{options.dist}!\n stderr: #{err}\n stdout: #{out}\n" unless stat.success?
 
   puts "#{out}"
