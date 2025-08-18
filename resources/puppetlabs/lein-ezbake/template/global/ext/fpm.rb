@@ -431,6 +431,10 @@ termini_opts.flatten!
 fpm_opts << "#{options.sources.join(' ')}"
 termini_opts << "#{options.termini_sources.join(' ')}"
 
+if options.debug
+  fpm_opts << '--debug'
+end
+
 # FPM prepends %dir to the %files list entries if the file is a directory
 # https://github.com/jordansissel/fpm/blob/a996a8a404f012a4cdc95bce4b1e32b1982839e6/templates/rpm.erb#L249-L250
 # This prevents us from recursively setting ownership/group on files within a directory
