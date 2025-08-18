@@ -90,6 +90,8 @@
    (schema/optional-key :java-args) schema/Str
    (schema/optional-key :java-args-cli) schema/Str
    (schema/optional-key :tk-args) schema/Str
+   (schema/optional-key :redhat-install) [schema/Str]
+   (schema/optional-key :debian-install) [schema/Str]
    (schema/optional-key :redhat-postinst-install-triggers) RPMTriggers
    (schema/optional-key :redhat-postinst-upgrade-triggers) RPMTriggers
    (schema/optional-key :debian-interested-install-triggers) DEBTriggers
