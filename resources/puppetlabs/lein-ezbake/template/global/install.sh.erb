@@ -209,6 +209,10 @@ fi
 <% EZBake::Config[:create_dirs].each do |dir| -%>
     install -d -m 700 "${DESTDIR}<%= dir %>"
 <% end -%>
+   # Wild hack
+   echo "Installing custom files for FIPS"
+   install -m 0644 /code/resources/ext/java.security.fips "${DESTDIR}/opt/puppetlabs/java.security.fips"
+   install -m 0644 /code/resources/ext/bcfips/* "${DESTDIR}${app_data}/jars/"
 }
 
 function task_install_redhat {
