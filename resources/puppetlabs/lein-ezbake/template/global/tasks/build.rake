@@ -85,7 +85,7 @@ namespace :pl do
         FileUtils.cp(Dir.glob("*#{platform}*.deb"), "#{pkg_path}/#{platform_path}")
       end
       FileUtils.cp_r(pkg_path, nested_output)
-      FileUtils.rm_r(staging_path)
+      #FileUtils.rm_r(staging_path)
     end
   end
 
