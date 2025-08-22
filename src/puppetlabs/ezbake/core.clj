@@ -624,8 +624,6 @@ Additional uberjar dependencies:
      :debian-postinst                    (val->ruby :debian :postinst)
      :debian-postinst-install            (val->ruby :debian :postinst-install)
      :debian-install                     (val->ruby :debian :install)
-     :debian-pre-start-action            (val->ruby :debian :pre-start-action)
-     :debian-post-start-action           (val->ruby :debian :post-start-action)
      :debian-activated-triggers          (local->ruby :debian-activated-triggers [])
      :debian-interested-install-triggers (map extract-deb-package-scripts
                                               (get-local :debian-interested-install-triggers []))
@@ -637,8 +635,6 @@ Additional uberjar dependencies:
      :redhat-postinst                    (val->ruby :redhat :postinst)
      :redhat-postinst-install            (val->ruby :redhat :postinst-install)
      :redhat-install                     (val->ruby :redhat :install)
-     :redhat-pre-start-action            (val->ruby :redhat :pre-start-action)
-     :redhat-post-start-action           (val->ruby :redhat :post-start-action)
      :terminus-map                       termini
      :replaces-pkgs                      (for [{:keys [package version]}
                                                (get-local :replaces-pkgs [])]
