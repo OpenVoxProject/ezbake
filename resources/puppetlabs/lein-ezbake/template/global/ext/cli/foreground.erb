@@ -2,7 +2,7 @@
 
 restartfile="/opt/puppetlabs/server/data/<%= EZBake::Config[:real_name] %>/restartcounter"
 if [ ! -e "$restartfile" ]; then
-  printf '0' | /usr/bin/install -D --owner="${USER:-<%= EZBake::Config[:user] %>}" --group="${GROUP:-<%= EZBake::Config[:group] %>}" --mode=0644 "$restartfile"
+  printf '0' | /usr/bin/install -D -o "${USER:-<%= EZBake::Config[:user] %>}" -g "${GROUP:-<%= EZBake::Config[:group] %>}" -m 0644 /dev/stdin "$restartfile"
 fi
 
 if ! (echo "${@}" | grep -e "--debug" -q)
