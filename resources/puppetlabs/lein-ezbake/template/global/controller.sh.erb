@@ -92,22 +92,8 @@ case $os in
                         dir="$basepath/systemd_deb"
                 fi
                 ;;
-        el|redhatfips)
-                if [ "$os_version" -gt '6' ]; then
-                        dir="$basepath/systemd_el"
-                else
-                        dir="$basepath/old_el"
-                fi
-                ;;
-        amazon)
+        amazon|el|fedora|redhatfips|sles)
                 dir="$basepath/systemd_el"
-                ;;
-        sles)
-                if [ "$os_version" -gt '11' ]; then
-                        dir="$basepath/systemd_el"
-                else
-                        dir="$basepath/old_sles"
-                fi
                 ;;
         *)
                 echo "I have no idea what I'm doing with $os, teach me?" >&2
