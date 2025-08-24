@@ -44,13 +44,9 @@ UMask=027
 LimitNOFILE=<%= EZBake::Config[:open_file_limit] %>
 <% end -%>
 
-<% unless EZBake::Config[:redhat][:pre_start_action].empty? -%>
-PermissionsStartOnly=true
-<% EZBake::Config[:redhat][:pre_start_action].each do |action| -%>
-ExecStartPre=<%= action %>
-<% end -%>
-<% end -%>
-
+# RUNTIME_DIRECTORY is set by systemd
+# https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#RuntimeDirectory=
+ExecStartPre=sh -c "echo -n 0 > ${RUNTIME_DIRECTORY}/restart"
 ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS -Dlogappender=F1 \
   '-XX:OnOutOfMemoryError=kill -9 %p' -XX:+CrashOnOutOfMemoryError \
   -XX:ErrorFile="${LOGS_DIRECTORY}/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
@@ -59,14 +55,18 @@ ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS -Dlogappender=F1 \
   -m <%= EZBake::Config[:main_namespace] %> \
   --config "${CONFIG}" \
   --bootstrap-config "${BOOTSTRAP_CONFIG}" \
+  --restart-file ${RUNTIME_DIRECTORY}/restart \
   $TK_ARGS
 
 KillMode=process
 
-<% EZBake::Config[:redhat][:post_start_action].each do |action| -%>
-ExecStartPost=-<%= action %>
-<% end -%>
+# wait until the service is actually up
+ExecStartPost=sh -c "sleep 1; while ! head -c1 ${RUNTIME_DIRECTORY}/restart | grep -q '^1'; do kill -0 $MAINPID && sleep 1 || exit 1; done"
+
+ExecReload=sh -c "echo -n 0 > ${RUNTIME_DIRECTORY}/restart"
 ExecReload=kill -HUP $MAINPID
+ExecReload=sh -c "while ! head -c1 ${RUNTIME_DIRECTORY}/restart | grep -q '^1'; do kill -0 $MAINPID && sleep 1 || exit 1; done"
+
 SuccessExitStatus=143
 
 [Install]
