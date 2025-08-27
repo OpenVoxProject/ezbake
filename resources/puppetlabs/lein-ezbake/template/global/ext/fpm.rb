@@ -322,7 +322,7 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  options.java = 'openjdk-17-jre-headless | openjdk-11-jre-headless'
+  options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless | openjdk-11-jre-headless'
 
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
