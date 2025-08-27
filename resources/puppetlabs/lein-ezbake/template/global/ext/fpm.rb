@@ -309,7 +309,7 @@ elsif options.output_type == 'deb'
   end
 
   if ! options.is_pe
-    options.java = 'openjdk-17-jre-headless | openjdk-11-jre-headless'
+    options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless | openjdk-11-jre-headless'
   end
 
   fpm_opts << '--deb-build-depends cdbs'
