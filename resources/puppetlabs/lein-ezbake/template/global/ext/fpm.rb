@@ -207,9 +207,8 @@ if options.output_type == 'rpm'
     options.systemd = 1
     options.systemd_sles = 1
     options.sles = 1
-    if ! options.is_pe
-      options.java = 'java-11-openjdk-headless'
-    end
+    # 15.7 drops Java 11, and 17 is still available on 15.6
+    options.java = options.os_version >= 15 ? 'java-17-openjdk-headless' : 'java-11-openjdk-headless'
   elsif options.operating_system == :sles #old sles
     options.sysvinit = 1
     options.old_sles = 1
