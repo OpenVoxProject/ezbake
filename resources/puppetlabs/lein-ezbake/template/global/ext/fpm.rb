@@ -244,7 +244,8 @@ if options.output_type == 'rpm'
   elsif options.operating_system == :sles
     options.systemd_sles = 1
     options.sles = 1
-    options.java = 'java-11-openjdk-headless'
+    # 15.7 drops Java 11, and 17 is still available on 15.6
+    options.java = options.os_version >= 15 ? 'java-17-openjdk-headless' : 'java-11-openjdk-headless'
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
