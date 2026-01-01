@@ -6,9 +6,9 @@
 
   :dependencies [[me.raynes/fs "1.4.6" :exclusions [org.clojure/clojure]]
                  [me.raynes/conch "0.8.0"]
-                 [clj-time "0.6.0"]
-                 [cheshire "5.7.1"]
-                 [prismatic/schema "1.0.4"]
+                 [clj-time "0.15.2"]
+                 [cheshire "6.1.0"]
+                 [prismatic/schema "1.4.1"]
                  [org.openvoxproject/typesafe-config "0.2.2" :exclusions [org.clojure/clojure]]]
 
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
@@ -20,6 +20,6 @@
 
   :resource-paths ["resources/"]
 
-  :profiles {:dev {:dependencies [[io.aviso/pretty "0.1.10"]]}}
+  :profiles {:dev {:dependencies [[io.aviso/pretty "1.4.4"]]}}
 
   :eval-in-leiningen true)
