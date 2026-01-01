@@ -38,9 +38,26 @@ jobs:
           lein: latest # Leiningen
       - run: lein test
 
+  # this validates the Gemfile and Rakefile that will be copied into the build container
+  # they provide tasks that will be used to compile ezbake projects and build packages
+  validate-staging-templates:
+    name: Validate Ruby
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: resources/puppetlabs/lein-ezbake/template/global
+      - run: bundle env
+        working-directory: resources/puppetlabs/lein-ezbake/template/global
+
   tests:
     needs:
       - test
+      - validate-staging-templates
     runs-on: ubuntu-24.04
     name: Test suite
     steps:
