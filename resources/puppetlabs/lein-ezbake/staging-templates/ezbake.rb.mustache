@@ -36,8 +36,6 @@ module EZBake
                           :additional_postinst => {{{debian-postinst}}},
                           :additional_postinst_install => {{{debian-postinst-install}}},
                           :additional_install => {{{debian-install}}},
-                          :pre_start_action => {{{debian-pre-start-action}}},
-                          :post_start_action => {{{debian-post-start-action}}},
                           :interested_install_triggers => {
                                                  {{#debian-interested-install-triggers}}
                                                    {{{interest-name}}} => [{{{scripts}}}],
@@ -57,8 +55,6 @@ module EZBake
                           :additional_postinst => {{{redhat-postinst}}},
                           :additional_postinst_install => {{{redhat-postinst-install}}},
                           :additional_install => {{{redhat-install}}},
-                          :pre_start_action => {{{redhat-pre-start-action}}},
-                          :post_start_action => {{{redhat-post-start-action}}},
                           :postinst_install_triggers => {
                                                  {{#redhat-postinst-install-triggers}}
                                                    {{{package}}} => [{{{scripts}}}],

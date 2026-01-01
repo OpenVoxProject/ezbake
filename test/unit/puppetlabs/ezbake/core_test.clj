@@ -51,7 +51,6 @@
                     :cli-app-files "[]"
                     :debian-deps "[]"
                     :redhat-deps "[]"
-                    :redhat-post-start-action "[]"
                     :tk-args "''"
                     :replaces-pkgs []
                     :start-before "[]"
@@ -75,12 +74,9 @@
                     :cli-defaults-file "'ext/cli_defaults/cli-defaults.sh'"
                     :debian-install "[]"
                     :redhat-postinst-install-triggers []
-                    :redhat-pre-start-action "[]"
                     :user "'dummy'"
                     :redhat-install "[]"
                     :redhat-postinst-install "[]"
-                    :debian-post-start-action "[]"
-                    :debian-pre-start-action "[]"
                     :debian-preinst "[]"
                     :real-name "'dummy'"
                     :puppet-platform-version "7"
