@@ -71,6 +71,7 @@
 (def LocalProjectVars
   {(schema/optional-key :user) schema/Str
    (schema/optional-key :numeric-uid-gid) schema/Int
+   (schema/optional-key :service-port) schema/Int
    (schema/optional-key :group) schema/Str
    (schema/optional-key :puppet-platform-version) schema/Int
    (schema/optional-key :bootstrap-source) BootstrapSource
@@ -608,6 +609,7 @@ Additional uberjar dependencies:
      :real-name                          (-> (:name lein-project) get-real-name as-ruby-literal)
      :user                               (local->ruby :user (:name lein-project))
      :numeric-uid-gid                    (local->ruby :numeric-uid-gid nil)
+     :service-port                       (local->ruby :service-port nil)
      :group                              (local->ruby :group (:name lein-project))
      :uberjar-name                       (as-ruby-literal (:uberjar-name lein-project))
      :config-files                       (as-ruby-literal (map remove-erb-extension config-files))

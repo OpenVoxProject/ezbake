@@ -63,6 +63,10 @@ ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS -Dlogappender=F1 \
 
 KillMode=process
 
+<% if EZBake::Config[:service_port] -%>
+# Wait until the service is started and opened the correct TCP port
+ExecStartPost=timeout 30s sh -c 'while ! ss -H -t -l -n sport = :<%= EZBake::Config[:service_port] %> | grep -q "^LISTEN.*:<%= EZBake::Config[:service_port] %>"; do sleep 1s; done'
+<% end -%>
 <% EZBake::Config[:redhat][:post_start_action].each do |action| -%>
 ExecStartPost=-<%= action %>
 <% end -%>
