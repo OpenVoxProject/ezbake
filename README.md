@@ -1,6 +1,9 @@
 lein-ezbake
 ======
 
+*NOTE: This README needs updating. As of 12/31/25, `main` is the stable branch used for releasing clojure projects, and `dev` is for an ongoing ezbake refactor. Non-breaking changes that don't require major testing
+should go in both branches, and any high-touch changes (e.g. changing how services are created, changing how packages are built) that have not had extensive changing should go into `dev` only.*
+
 EZBake is a leiningen plugin that integrates multiple Trapperkeeper services
 and their config files into a single uberjar and stages them in preparation for
 packaging.

@@ -9,7 +9,7 @@
 ;;; Constants
 
 (def project-resource-path
-  "META-INF/leiningen/puppetlabs/lein-ezbake/project.clj")
+  "META-INF/leiningen/org.openvoxproject/lein-ezbake/project.clj")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Jar Helpers

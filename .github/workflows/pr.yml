@@ -16,10 +16,9 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        java:
-          - '11'
-          - '17'
-          - '21'
+        java: [ '17', '21' ]
+    env:
+      LEIN_HOME: local
     name: Java ${{ matrix.java }} tests
     steps:
       - uses: actions/checkout@v6
