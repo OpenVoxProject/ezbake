@@ -9,11 +9,14 @@
                  [clj-time "0.6.0"]
                  [cheshire "5.7.1"]
                  [prismatic/schema "1.0.4"]
-                 [org.openvoxproject/typesafe-config "0.2.2" :exclusions [org.clojure/clojure]]]
+                 [puppetlabs/typesafe-config "0.1.3" :exclusions [org.clojure/clojure]]]
+
+  :repositories [["releases" "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-releases__local/"]
+                 ["snapshots" "https://artifactory.delivery.puppetlabs.net/artifactory/clojure-snapshots__local/"]]
 
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
-                                     :username :env/CLOJARS_USERNAME
-                                     :password :env/CLOJARS_PASSWORD
+                                     :username :env/clojars_username
+                                     :password :env/clojars_password
                                      :sign-releases false}]]
 
   :scm {:name "git" :url "https://github.com/openvoxproject/ezbake"}
