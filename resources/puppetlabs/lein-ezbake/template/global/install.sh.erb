@@ -209,6 +209,20 @@ fi
 <% EZBake::Config[:create_dirs].each do |dir| -%>
     install -d -m 700 "${DESTDIR}<%= dir %>"
 <% end -%>
+
+    # If, before running 'lein ezbake', we put extra jars into ext/jars,
+    # this will include them in the final installation so they can
+    # be added to the classpath at runtime.
+    shopt -s nullglob
+    echo "Looking for extra jars to install ..."
+    extra_jars=(ext/jars/*.jar)
+    if [ ${#extra_jars[@]} -gt 0 ]; then
+        install -d -m 0700 "${dest_apps_dir}/jars"
+        install -m 0644 "${extra_jars[@]}" "${dest_apps_dir}/jars/"
+    else
+        echo "No extra jars found."
+    fi
+    shopt -u nullglob
 }
 
 function task_install_redhat {
