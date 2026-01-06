@@ -294,8 +294,6 @@ function task_systemd_deb {
     fi
     install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
     install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
-    install -d -m 0755 "${DESTDIR}${needrestart_confdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.needrestart.conf "${DESTDIR}${needrestart_confdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 function task_service_account {
