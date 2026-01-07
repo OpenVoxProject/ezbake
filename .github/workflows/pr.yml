@@ -12,8 +12,25 @@ permissions:
   contents: read
 
 jobs:
+  # this validates the Gemfile and Rakefile that will be copied into the build container
+  # they provide tasks that will be used to compile ezbake projects and build packages
+  validate-staging-templates:
+    name: Validate Ruby
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: resources/puppetlabs/lein-ezbake/template/global
+      - run: bundle env
+        working-directory: resources/puppetlabs/lein-ezbake/template/global
+
   test:
     runs-on: ubuntu-24.04
+    needs: validate-staging-templates
     strategy:
       matrix:
         java: [ '17', '21' ]
@@ -38,27 +55,44 @@ jobs:
           lein: latest # Leiningen
       - run: lein test
 
-  # this validates the Gemfile and Rakefile that will be copied into the build container
-  # they provide tasks that will be used to compile ezbake projects and build packages
-  validate-staging-templates:
-    name: Validate Ruby
+  build:
+    name: build ${{ matrix.project }}
     runs-on: ubuntu-24.04
+    needs:
+      - test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: openvox-server
+            repository: 'OpenVoxProject/openvox-server'
+          - project: openvoxdb
+            repository: 'OpenVoxProject/openvoxdb'
     steps:
-      - uses: actions/checkout@v6
+      - name: checkout openvox-server
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repository }}
+          submodules: true
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
           bundler-cache: true
-          working-directory: resources/puppetlabs/lein-ezbake/template/global
-      - run: bundle env
-        working-directory: resources/puppetlabs/lein-ezbake/template/global
+      - name: Display Ruby environment
+        run: bundle env
+      - name: build
+        run: bundle exec rake vox:build
+        env:
+          EZBAKE_REPO: "https://github.com/${{ github.repository }}" # https://github.com/actions/checkout?tab=readme-ov-file#usage
+          EZBAKE_BRANCH: $GITHUB_REF # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
 
   tests:
     if: always()
     needs:
       - test
       - validate-staging-templates
+      - build
     runs-on: ubuntu-24.04
     name: Test suite
     steps:
