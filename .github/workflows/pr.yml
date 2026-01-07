@@ -54,11 +54,21 @@ jobs:
       - run: bundle env
         working-directory: resources/puppetlabs/lein-ezbake/template/global
 
+  build:
+    name: build openvox-server
+    steps:
+      - name: checkout openvox-server
+        uses: actions/checkout@v6
+        with:
+          repository: 'OpenVoxProject/openvox-server'
+          submodules: true
+
   tests:
     if: always()
     needs:
       - test
       - validate-staging-templates
+      - build
     runs-on: ubuntu-24.04
     name: Test suite
     steps:
