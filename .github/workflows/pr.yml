@@ -113,7 +113,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-vanagon-${{ needs.get-ezbake-version.outputs.ezbake_version }}
+          name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-ezbake-${{ needs.get-ezbake-version.outputs.ezbake_version }}
           path: output/
           retention-days: 1 # quite low retention, because the artifacts are quite large
           overwrite: true # overwrite old artifacts if a PR runs again (artifacts are per PR * per project)
