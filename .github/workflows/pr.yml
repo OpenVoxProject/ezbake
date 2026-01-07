@@ -85,6 +85,9 @@ jobs:
             repository: 'OpenVoxProject/openvox-server'
           - project: openvoxdb
             repository: 'OpenVoxProject/openvoxdb'
+    outputs:
+      openvoxdb: ${{ steps.upload-artifacts-openvoxdb.outputs.artifact-url }}
+      openvoxserver: ${{ steps.upload-artifacts-openvoxserver.outputs.artifact-url }}
     steps:
       - name: checkout openvox-server
         uses: actions/checkout@v6
@@ -112,11 +115,28 @@ jobs:
           EZBAKE_VERSION: ${{ needs.get-ezbake-version.outputs.ezbake_version }} # ensures that we used the built version of ezbake and don't pull from clojars.org
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
+        id: upload-artifacts-${{ matrix.project }}
         with:
           name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-ezbake-${{ needs.get-ezbake-version.outputs.ezbake_version }}
           path: output/
           retention-days: 1 # quite low retention, because the artifacts are quite large
           overwrite: true # overwrite old artifacts if a PR runs again (artifacts are per PR * per project)
+
+  comment-on-pr:
+    runs-on: ubuntu-24.04
+    needs:
+      - build
+    steps:
+      - name: Add reactions
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          body: |-
+            ## Build Preview
+
+            [![badge]](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            The rpm/deb packages for openvox-server and openvoxdb are available in two zip archives:
+            ${{ toJSON(needs.build.outputs) }}
 
   tests:
     if: always()
@@ -125,6 +145,7 @@ jobs:
       - validate-staging-templates
       - build
       - get-ezbake-version
+      - comment-on-pr
     runs-on: ubuntu-24.04
     name: Test suite
     steps:
