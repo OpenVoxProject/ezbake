@@ -56,16 +56,36 @@ jobs:
       - run: lein test
 
   build:
-    name: build openvox-server
+    name: build ${{ matrix.project }}
     runs-on: ubuntu-24.04
     needs:
       - test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: openvox-server
+            repository: 'OpenVoxProject/openvox-server'
+          - project: openvoxdb
+            repository: 'OpenVoxProject/openvoxdb'
     steps:
       - name: checkout openvox-server
         uses: actions/checkout@v6
         with:
-          repository: 'OpenVoxProject/openvox-server'
+          repository: ${{ matrix.repository }}
           submodules: true
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - name: Display Ruby environment
+        run: bundle env
+      - name: build
+        run: bundle exec rake vox:build
+        env:
+          EZBAKE_REPO: "https://github.com/${{ github.repository }}" # https://github.com/actions/checkout?tab=readme-ov-file#usage
+          EZBAKE_BRANCH: $GITHUB_REF # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
 
   tests:
     if: always()
