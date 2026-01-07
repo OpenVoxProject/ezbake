@@ -13,9 +13,6 @@ if [ $1 = 'configure' -a -n $2 ] ; then
     # Using systemd
     systemctl daemon-reload >/dev/null 2>&1 || :
     systemctl try-restart <%= EZBake::Config[:project] %>.service ||:
-  else
-    # Using sysv
-    invoke-rc.d <%= EZBake::Config[:project] %> try-restart || :
   fi
 fi
 

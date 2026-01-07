@@ -134,11 +134,7 @@ if options.sources.empty?
                     when :amazon, :fedora, :sles, :el, :redhatfips
                       ['etc', 'opt', 'usr', 'var']
                     when :debian, :ubuntu
-                      if options.dist == 'trusty' #trusty is the only sysv deb we build for right now
-                        ['etc', 'opt', 'var']
-                      else
-                        ['etc', 'lib', 'opt', 'usr', 'var']
-                      end
+                      ['etc', 'lib', 'opt', 'usr', 'var']
                     else
                       fail "I don't know what your default sources should be, pass it on the command line!"
                     end
