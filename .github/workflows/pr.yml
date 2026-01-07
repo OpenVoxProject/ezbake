@@ -91,6 +91,7 @@ jobs:
         with:
           repository: ${{ matrix.repository }}
           submodules: true
+          fetch-depth: 0 # So we fetch all history and tags and can build non-tagged versions
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -98,12 +99,24 @@ jobs:
           bundler-cache: true
       - name: Display Ruby environment
         run: bundle env
-      - name: build
+      - name: get ${{ matrix.project }} version
+        id: version
+        run: |
+          DESCRIBE=$(git describe --abbrev=9)
+          echo "describe=${DESCRIBE//-/.}" >> $GITHUB_OUTPUT
+      - name: build ${{ matrix.project }} with ezbake ${{ needs.get-ezbake-version.outputs.ezbake_version }}
         run: bundle exec rake vox:build
         env:
           EZBAKE_REPO: "https://github.com/${{ github.repository }}" # https://github.com/actions/checkout?tab=readme-ov-file#usage
           EZBAKE_BRANCH: $GITHUB_REF # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
           EZBAKE_VERSION: ${{ needs.get-ezbake-version.outputs.ezbake_version }} # ensures that we used the built version of ezbake and don't pull from clojars.org
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-vanagon-${{ needs.get-ezbake-version.outputs.ezbake_version }}
+          path: output/
+          retention-days: 1 # quite low retention, because the artifacts are quite large
+          overwrite: true # overwrite old artifacts if a PR runs again (artifacts are per PR * per project)
 
   tests:
     if: always()
