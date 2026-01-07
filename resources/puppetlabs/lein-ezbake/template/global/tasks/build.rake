@@ -1,13 +1,5 @@
 require 'json'
 
-def get_auth_info(job_url)
-  <<-DOC
-You need to pass the environment variable JENKINS_USER_AUTH
-It should be in the format <LDAP username>:<access token>
-To find your access token, go to http://<jenkins-url>/me/configure
-  DOC
-end
-
 namespace :pl do
   desc "do a local build"
   task :local_build => "pl:fetch" do
@@ -81,82 +73,5 @@ namespace :pl do
     bundle = Pkg::Util::Git.git_bundle('HEAD')
     FileUtils.cp(props, "#{args[:output_dir]}/BUILD_PROPERTIES")
     FileUtils.cp(bundle, "#{args[:output_dir]}/PROJECT_BUNDLE")
-  end
-
-  namespace :jenkins do
-    desc "trigger jenkins packaging job"
-    task :trigger_build, [:auth_string, :job_url] do |t, args|
-      unless args[:auth_string] =~ /:/
-        # Old-style bare-token "build?token=<foo>" is no longer supported.
-        raise "JENKINS_USER_AUTH must have the format <LDAP username>:<access token>"
-      end
-
-      Pkg::Util::RakeUtils.invoke_task("pl:prep_artifacts", Dir.pwd)
-
-      curl_opts = [
-        '--location',
-        "--user #{args[:auth_string]}",
-        '--request POST',
-        "--form file0=@#{Dir.pwd}/BUILD_PROPERTIES",
-        "--form file1=@#{Dir.pwd}/PROJECT_BUNDLE",
-      ]
-
-      parameter_json = {
-        parameter: [
-          {
-            name: 'BUILD_PROPERTIES',
-            file: 'file0'
-          },
-          {
-            name: 'PROJECT_BUNDLE',
-            file: 'file1'
-          },
-          {
-            name: 'COWS',
-            value: Pkg::Config.cows
-          },
-          {
-            name: 'MOCKS',
-            value: Pkg::Config.final_mocks
-          }
-        ]
-      }
-
-      curl_opts << %(--form json='#{parameter_json.to_json}')
-      curl_url = "#{args[:job_url]}/build"
-
-      output, _ = Pkg::Util::Net.curl_form_data(curl_url, curl_opts)
-      http_response = output.scan(/^HTTP.*$/).last
-
-      # Print an error unless it looks like we curl'd successfully
-      unless http_response =~ /2\d\d/
-        raise "HTTP response: #{http_response}\n\n#{get_auth_info(args[:job_url])}"
-      end
-
-      Pkg::Util::Net.print_url_info(args[:job_url])
-      package_url = "#{Pkg::Config.builds_server}/#{Pkg::Config.project}/#{Pkg::Config.ref}"
-      puts "After the build job is completed, packages will be available at:"
-      puts package_url
-    end
-
-    desc "trigger jenkins packaging job with local auth"
-    task :trigger_build_local_auth => "pl:fetch" do
-      jenkins_hostname = 'jenkins-platform.delivery.puppetlabs.net'
-      stream = 'platform'
-      job_url = "https://#{jenkins_hostname}/job/#{stream}_various-packaging-jobs_packaging-os-clj_lein-ezbake-generic"
-
-      begin
-        auth = Pkg::Util.check_var('JENKINS_USER_AUTH', ENV['JENKINS_USER_AUTH'])
-      rescue
-        STDERR.puts(get_auth_info(job_url))
-      end
-
-      begin
-        Pkg::Util::RakeUtils.invoke_task("pl:jenkins:trigger_build", auth, job_url)
-      rescue => e
-        STDERR.puts("\nError triggering job: #{job_url}")
-        STDERR.puts(e)
-      end
-    end
   end
 end

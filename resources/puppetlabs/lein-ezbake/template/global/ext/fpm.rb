@@ -4,7 +4,66 @@ require 'open3'
 require 'optparse'
 require 'ostruct'
 
+def patch_files(options)
+  if options.java_bin == EZBake::Config[:java_bin]
+    yield
+  else
+    suffix = '.backup'
+    [
+      # Debian
+      '/etc/default/puppet*',
+      '/lib/systemd/system/puppet*.service',
+      # RPM
+      '/usr/lib/systemd/system/puppet*.service',
+      '/etc/sysconfig/puppet*',
+    ].each do |path|
+      Dir.glob(File.join(options.chdir, path)).each do |real_path|
+        content = File.read(real_path)
+        next unless content.include?(EZBake::Config[:java_bin])
+
+        warn "Copying #{real_path} to #{real_path}#{suffix}"
+        FileUtils.cp(real_path, "#{real_path}#{suffix}")
+        warn "Patching #{real_path} to use #{options.java_bin}"
+        File.write(real_path, content.gsub(EZBake::Config[:java_bin], options.java_bin))
+      end
+    end
+
+    yield
+
+    Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
+      original = File.join(File.dirname(path), File.basename(path, suffix))
+      warn "Restoring #{path} to #{original}"
+      FileUtils.mv(path, original)
+    end
+  end
+end
+
 options = OpenStruct.new
+
+# ezbake.rb is rendered from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+#
+# inside the build container, fpm.rb is at:
+# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
+# ezbake:
+# /code/target/staging/ezbake.rb
+#
+# we do this hula hoop jump because in our build process the ezbake.rb exists
+# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
+# fpm.rb is executed while we build the packages. This is the same process as
+# compiling the jar and rendering ezbake from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
+#
+# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
+begin
+  require_relative '../../ezbake'
+rescue LoadError
+  options.java_bin = '/usr/bin/java'
+else
+  options.java_bin = EZBake::Config[:java_bin]
+end
+
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
@@ -134,7 +193,7 @@ if options.sources.empty?
                     when :amazon, :fedora, :sles, :el, :redhatfips
                       ['etc', 'opt', 'usr', 'var']
                     when :debian, :ubuntu
-                      ['etc', 'lib', 'opt', 'usr', 'var']
+                      ['etc', 'lib', 'opt', 'var']
                     else
                       fail "I don't know what your default sources should be, pass it on the command line!"
                     end
@@ -146,7 +205,6 @@ shared_opts = Array('')
 termini_opts = Array('')
 
 options.app_logdir = "/var/log/puppetlabs/#{options.realname}"
-options.app_rundir = "/var/run/puppetlabs/#{options.realname}"
 options.app_prefix = "/opt/puppetlabs/server/apps/#{options.realname}"
 options.app_data = "/opt/puppetlabs/server/data/#{options.realname}"
 
@@ -156,7 +214,6 @@ if options.output_type == 'rpm'
   shared_opts << "--rpm-digest sha256"
   shared_opts << "--rpm-rpmbuild-define 'rpmversion #{options.version}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_logdir #{options.app_logdir}'"
-  fpm_opts << "--rpm-rpmbuild-define '_app_rundir #{options.app_rundir}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
@@ -197,7 +254,6 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_systemd_sles #{options.systemd_sles}'"
   fpm_opts << "--rpm-rpmbuild-define '_sysconfdir /etc'"
   fpm_opts << "--rpm-rpmbuild-define '_prefix #{options.app_prefix}'"
-  fpm_opts << "--rpm-rpmbuild-define '_rundir /var/run'"
   fpm_opts << "--rpm-rpmbuild-define '__jar_repack 0'"
 
   shared_opts << "--rpm-dist #{options.dist}"
@@ -228,7 +284,6 @@ if options.output_type == 'rpm'
 
   fpm_opts << "--directories #{options.app_logdir}"
   fpm_opts << "--directories /etc/puppetlabs/#{options.realname}"
-  fpm_opts << "--directories #{options.app_rundir}"
   shared_opts << "--rpm-auto-add-directories"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/puppetlabs"
   shared_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs"
@@ -240,9 +295,7 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd/system"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/logrotate.d"
-  fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/tmpfiles.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/log/puppetlabs"
-  fpm_opts << "--rpm-auto-add-exclude-directories /var/run/puppetlabs"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet/lib"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet/lib/ruby"
@@ -262,7 +315,6 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-attr 750,#{options.user},#{options.group}:/etc/puppetlabs/#{options.realname}"
   fpm_opts << "--rpm-attr 750,#{options.user},#{options.group}:#{options.app_logdir}"
   fpm_opts << "--rpm-attr -,#{options.user},#{options.group}:#{options.app_data}"
-  fpm_opts << "--rpm-attr 755,#{options.user},#{options.group}:#{options.app_rundir}"
 
   fpm_opts << "--edit"
   fpm_opts << "--category 'System Environment/Daemons'"
@@ -345,7 +397,6 @@ end
 fpm_opts << "--depends '#{options.java}'"
 
 fpm_opts << "--depends bash"
-fpm_opts << "--depends net-tools"
 fpm_opts << "--depends /usr/bin/which" if options.output_type == 'rpm'
 fpm_opts << "--depends adduser" if options.output_type == 'deb'
 fpm_opts << "--depends procps"
@@ -418,22 +469,24 @@ if options.debug
   puts "#{Dir.pwd}"
 end
 
-# fpm sends all output to stdout
-out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
-fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
-
-puts "#{out}"
-
-if options.termini
-  if options.debug
-    puts "=========================="
-    puts "FPM COMMAND"
-    puts "fpm #{termini_opts.join(' ')}"
-    puts "=========================="
-  end
-
+patch_files(options) do
   # fpm sends all output to stdout
-  out, _, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
-  fail "Error trying to run FPM for the termini for #{options.dist}!\n#{out}" unless stat.success?
+  out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
+  fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
+
   puts "#{out}"
+
+  if options.termini
+    if options.debug
+      puts "=========================="
+      puts "FPM COMMAND"
+      puts "fpm #{termini_opts.join(' ')}"
+      puts "=========================="
+    end
+
+    # fpm sends all output to stdout
+    out, _, stat = Open3.capture3("fpm #{termini_opts.join(' ')}")
+    fail "Error trying to run FPM for the termini for #{options.dist}!\n#{out}" unless stat.success?
+    puts "#{out}"
+  end
 end

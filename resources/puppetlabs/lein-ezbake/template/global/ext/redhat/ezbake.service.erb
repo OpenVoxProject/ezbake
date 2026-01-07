@@ -19,14 +19,15 @@ Wants=<%= EZBake::Config[:start_after].map {|dep| "#{dep}.service" }.join(" ") %
 <% end -%>
 
 [Service]
-Type=forking
+Type=notify-reload
+LogsDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
+RuntimeDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
 EnvironmentFile=/etc/sysconfig/<%= EZBake::Config[:project] %>
 User=<%= EZBake::Config[:user] %>
 TimeoutStartSec=<%= EZBake::Config[:start_timeout] %>
 TimeoutStopSec=<%= EZBake::Config[:stop_timeout] %>
 Restart=on-failure
 StartLimitBurst=5
-PIDFile=/run/puppetlabs/<%= EZBake::Config[:real_name] %>/<%= EZBake::Config[:real_name] %>.pid
 PrivateTmp=true
 
 # https://tickets.puppetlabs.com/browse/EZ-129
@@ -50,15 +51,22 @@ ExecStartPre=<%= action %>
 <% end -%>
 <% end -%>
 
-ExecReload=/opt/puppetlabs/server/apps/<%= EZBake::Config[:real_name] %>/bin/<%= EZBake::Config[:real_name] %> reload
-ExecStart=/opt/puppetlabs/server/apps/<%= EZBake::Config[:real_name] %>/bin/<%= EZBake::Config[:real_name] %> start
-ExecStop=/opt/puppetlabs/server/apps/<%= EZBake::Config[:real_name] %>/bin/<%= EZBake::Config[:real_name] %> stop
+ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS -Dlogappender=F1 \
+  '-XX:OnOutOfMemoryError=kill -9 %p' -XX:+CrashOnOutOfMemoryError \
+  -XX:ErrorFile="${LOGS_DIRECTORY}/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
+  -cp "${INSTALL_DIR}/<%= EZBake::Config[:uberjar_name] %>" \
+  clojure.main \
+  -m <%= EZBake::Config[:main_namespace] %> \
+  --config "${CONFIG}" \
+  --bootstrap-config "${BOOTSTRAP_CONFIG}" \
+  $TK_ARGS
 
 KillMode=process
 
 <% EZBake::Config[:redhat][:post_start_action].each do |action| -%>
 ExecStartPost=-<%= action %>
 <% end -%>
+ExecReload=kill -HUP $MAINPID
 SuccessExitStatus=143
 
 [Install]
