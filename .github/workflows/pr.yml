@@ -112,11 +112,31 @@ jobs:
           EZBAKE_VERSION: ${{ needs.get-ezbake-version.outputs.ezbake_version }} # ensures that we used the built version of ezbake and don't pull from clojars.org
       - name: Upload build artifacts
         uses: actions/upload-artifact@v6
+        id: upload
         with:
           name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-ezbake-${{ needs.get-ezbake-version.outputs.ezbake_version }}
           path: output/
           retention-days: 1 # quite low retention, because the artifacts are quite large
           overwrite: true # overwrite old artifacts if a PR runs again (artifacts are per PR * per project)
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v4
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<!-- build-artifacts -->'
+      - name: Add or update comment
+        uses: peter-evans/create-or-update-comment@v5
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: append
+          body: |-
+            <!-- build-artifacts -->
+            The rpm/deb packages and the JAR file for ${{ github.repository }} are available in a zip archive:
+            ${{ steps.upload.outputs.artifact-url }}
 
   tests:
     if: always()
