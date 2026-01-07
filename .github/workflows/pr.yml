@@ -28,6 +28,23 @@ jobs:
       - run: bundle env
         working-directory: resources/puppetlabs/lein-ezbake/template/global
 
+  get-ezbake-version:
+    name: get ezbake version
+    runs-on: ubuntu-24.04
+    outputs:
+      ezbake_version: ${{ steps.version.outputs.ezbake_version }}
+    steps:
+      - uses: actions/checkout@v6
+      # install clojure tools
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          lein: latest # Leiningen
+      # used during the openvoxserver/db builds
+      - name: Get release version
+        id: version
+        run: echo "ezbake_version=$(lein update-in :plugins conj '[lein-pprint "1.3.2"]' -- pprint :version | tr -d '\"')" >> "$GITHUB_OUTPUT"
+
   test:
     runs-on: ubuntu-24.04
     needs: validate-staging-templates
@@ -59,7 +76,7 @@ jobs:
     name: build ${{ matrix.project }}
     runs-on: ubuntu-24.04
     needs:
-      - test
+      - get-ezbake-version
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +103,7 @@ jobs:
         env:
           EZBAKE_REPO: "https://github.com/${{ github.repository }}" # https://github.com/actions/checkout?tab=readme-ov-file#usage
           EZBAKE_BRANCH: $GITHUB_REF # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+          EZBAKE_VERSION: ${{ needs.get-ezbake-version.outputs.ezbake_version }} # ensures that we used the built version of ezbake and don't pull from clojars.org
 
   tests:
     if: always()
@@ -93,6 +111,7 @@ jobs:
       - test
       - validate-staging-templates
       - build
+      - get-ezbake-version
     runs-on: ubuntu-24.04
     name: Test suite
     steps:
