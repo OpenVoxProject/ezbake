@@ -9,7 +9,7 @@
                  [clj-time "0.15.2"]
                  [cheshire "6.1.0"]
                  [prismatic/schema "1.4.1"]
-                 [org.openvoxproject/typesafe-config "0.2.2" :exclusions [org.clojure/clojure]]]
+                 [org.openvoxproject/typesafe-config "1.0.1" :exclusions [org.clojure/clojure]]]
 
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
                                      :username :env/CLOJARS_USERNAME
