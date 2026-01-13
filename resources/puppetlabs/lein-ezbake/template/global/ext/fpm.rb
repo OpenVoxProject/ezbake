@@ -170,7 +170,7 @@ if options.output_type == 'rpm'
     options.java = 'java-17-amazon-corretto-headless'
     options.systemd = 1
     options.systemd_el = 1
-  elsif options.operating_system == :el
+  elsif options.operating_system == :el || options.operating_system == :redhatfips
     if options.os_version <= 7
       raise "el version #{options.os_version} is no longer supported"
     elsif (8..9).include?(options.os_version)
@@ -182,10 +182,6 @@ if options.output_type == 'rpm'
     else
       fail "Unrecognized el os version #{options.os_version}"
     end
-
-    options.systemd_el = 1
-  elsif options.operating_system == :redhatfips && options.os_version >= 7 # systemd redhatfips
-    options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :sles
     options.systemd_sles = 1
