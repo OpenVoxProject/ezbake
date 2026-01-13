@@ -994,7 +994,7 @@ Additional uberjar dependencies:
 (defmethod action "local-build"
   [_ lein-project build-target]
   (action "stage" lein-project build-target)
-  (exec/exec "bundle" "install" "--path" ".bundle/gems" "--binstubs" ".bundle/bin" :dir staging-dir)
+  ;; (exec/exec "bundle" "install" "--path" ".bundle/gems" "--binstubs" ".bundle/bin" :dir staging-dir)
   (let [downstream-job nil
         rake-call ["bundle" "exec" "rake" "pl:local_build"]]
     (exec/lazy-sh rake-call {:dir staging-dir})))
