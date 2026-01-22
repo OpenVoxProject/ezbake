@@ -44,6 +44,8 @@
 (def terminus-prefix "puppet/")
 (def additional-uberjar-checkouts-dir "target/uberjars")
 (def cli-defaults-filename (str shared-cli-defaults-prefix "cli-defaults.sh.erb"))
+(def classpath-jars-prefix "ext/classpath-jars/")
+(def project-files-prefix "ext/project-files/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schemas
@@ -67,6 +69,23 @@
   {(schema/optional-key :base-image) schema/Str
    (schema/optional-key :image-name) schema/Str
    (schema/optional-key :ports) [schema/Int]})
+
+(def ClasspathJarInstallSpec
+  {(schema/optional-key :path) schema/Str
+   (schema/optional-key :mode) schema/Str
+   (schema/optional-key :owner) schema/Str
+   (schema/optional-key :group) schema/Str})
+
+(def ClasspathJarSpec
+  {:artifact schema/Symbol
+   (schema/optional-key :install) ClasspathJarInstallSpec})
+
+(def ProjectFileSpec
+  {:file schema/Str
+   :install {:path schema/Str
+             (schema/optional-key :mode) schema/Str
+             (schema/optional-key :owner) schema/Str
+             (schema/optional-key :group) schema/Str}})
 
 (def LocalProjectVars
   {(schema/optional-key :user) schema/Str
@@ -385,6 +404,122 @@ Additional uberjar dependencies:
     (for [config-file config-files]
       (cp-to-staging-dir config-dir config-file system-config-dir))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Classpath Jar Extraction
+
+(schema/defn find-jar-on-classpath :- (schema/maybe File)
+  "Given a lein project and an artifact symbol (e.g., 'org.bouncycastle/bcpkix-jdk18on),
+   find the corresponding jar file on the resolved classpath. For artifacts where
+   the group-id equals the artifact-id (e.g., commons-io), an unqualified symbol
+   like 'commons-io may be used.
+   Returns the File for the jar, or nil if not found."
+  [lein-project artifact-symbol :- schema/Symbol]
+  (let [group-id (or (namespace artifact-symbol) (name artifact-symbol))
+        artifact-id (name artifact-symbol)
+        jar-pattern (re-pattern (format "%s-.+\\.jar$"
+                                        (java.util.regex.Pattern/quote artifact-id)))
+        group-path (str/replace group-id "." "/")
+        classifier-pattern #"-(sources|javadoc|tests)\.jar$"
+        classpath-jars (lein-classpath/resolve-managed-dependencies
+                        :dependencies :managed-dependencies lein-project)]
+    (->> classpath-jars
+         (filter #(and (re-find jar-pattern (.getPath %))
+                       (str/includes? (.getPath %) group-path)
+                       (not (re-find classifier-pattern (.getPath %)))))
+         first)))
+
+(schema/defn cp-classpath-jar-to-staging
+  "Copy a single jar from the classpath to the staging directory.
+   Returns a map with :jar-name, :staged-path, and :install-spec (if provided).
+   Aborts the build if the jar is not found on the classpath."
+  [lein-project {:keys [artifact install] :as jar-spec} :- ClasspathJarSpec]
+  (let [jar-file (find-jar-on-classpath lein-project artifact)
+        dest-dir (fs/file staging-dir classpath-jars-prefix)]
+    (if jar-file
+      (do
+        (fs/mkdirs dest-dir)
+        (let [dest-file (fs/file dest-dir (fs/base-name jar-file))]
+          (lein-main/info (format "Copying classpath jar %s (%s) to %s"
+                                  artifact (.getName jar-file) classpath-jars-prefix))
+          (fs/copy jar-file dest-file)
+          {:artifact artifact
+           :jar-name (fs/base-name jar-file)
+           :staged-path (str classpath-jars-prefix (fs/base-name jar-file))
+           :install-spec install}))
+      (lein-main/abort (format "Could not find jar for artifact %s on classpath" artifact)))))
+
+(schema/defn cp-classpath-jars
+  "Copy all configured classpath jars to the staging directory.
+   Returns a sequence of maps describing what was copied."
+  [lein-project]
+  (let [jar-specs (get-in lein-project [:lein-ezbake :classpath-jars] [])]
+    (mapv (partial cp-classpath-jar-to-staging lein-project) jar-specs)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Staged file installation for classpath jars and project files
+
+(defn- get-unique-install-dirs
+  "Extract unique installation directories from staged file results."
+  [staged-results]
+  (->> staged-results
+       (map #(get-in % [:install-spec :path]))
+       (remove nil?)
+       distinct))
+
+(defn- generate-mkdir-cmd
+  "Generate a mkdir install command for a directory."
+  [dir]
+  (format "install -d -m 0755 \"${DESTDIR}%s\"" dir))
+
+(defn- generate-file-install-cmd
+  "Generate an install command for a single staged file."
+  [{:keys [staged-path install-spec]}]
+  (let [{:keys [path mode owner group]} install-spec
+        mode (or mode "0644")
+        ownership-args (str (when owner (str " -o " owner))
+                            (when group (str " -g " group)))]
+    (format "install -m %s%s \"%s\" \"${DESTDIR}%s/\""
+            mode ownership-args staged-path path)))
+
+(schema/defn generate-staged-file-install-commands :- [schema/Str]
+  "Generate install commands for staged files that have :install-spec with :path.
+   Returns a vector of shell command strings: directory creation followed by file installs."
+  [staged-results]
+  (let [with-install (->> staged-results
+                          (filter :install-spec)
+                          (filter #(get-in % [:install-spec :path])))
+        install-dirs (get-unique-install-dirs with-install)
+        mkdir-cmds (map generate-mkdir-cmd install-dirs)
+        install-cmds (map generate-file-install-cmd with-install)]
+    (vec (concat mkdir-cmds install-cmds))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Project File Installation
+
+(schema/defn cp-project-file-to-staging
+  "Copy a project file to the staging directory for installation.
+   Returns a map with :file-name, :staged-path, and :install-spec."
+  [{:keys [file install] :as file-spec} :- ProjectFileSpec]
+  (let [source-file (io/file file)
+        dest-dir (fs/file staging-dir project-files-prefix)]
+    (if (.exists source-file)
+      (do
+        (fs/mkdirs dest-dir)
+        (let [dest-file (fs/file dest-dir (fs/base-name source-file))]
+          (lein-main/info (format "Copying project file %s to %s" file project-files-prefix))
+          (fs/copy source-file dest-file)
+          {:file-name (fs/base-name source-file)
+           :staged-path (str project-files-prefix (fs/base-name source-file))
+           :install-spec install}))
+      (lein-main/abort (format "Could not find project file %s" file)))))
+
+(schema/defn cp-project-files
+  "Copy all configured project files to the staging directory.
+   Returns a sequence of maps describing what was copied."
+  [lein-project]
+  (let [file-specs (get-in lein-project [:lein-ezbake :project-files] [])]
+    (mapv cp-project-file-to-staging file-specs)))
+
 (defn get-real-name
   [project-name]
   (str/replace-first project-name #"^pe-" ""))
@@ -579,7 +714,7 @@ Additional uberjar dependencies:
   "Construct the map of variables to pass on to the ezbake.rb template"
   [lein-project build-target
    config-files system-config-files cli-app-files bin-files terminus-files
-   upstream-ezbake-configs additional-uberjars timestamp]
+   upstream-ezbake-configs additional-uberjars classpath-jar-results project-file-results timestamp]
   (let [termini (for [[name version files] terminus-files]
                   {:name (as-ruby-literal name)
                    :version (as-ruby-literal version)
@@ -592,6 +727,12 @@ Additional uberjar dependencies:
                                     platform
                                     name))
         val->ruby #(as-ruby-literal (get-val %1 %2))
+        all-staged-results (concat classpath-jar-results project-file-results)
+        all-install-cmds (generate-staged-file-install-commands all-staged-results)
+        ;; For :install, we need to append classpath jar commands to the upstream commands
+        val->ruby-install (fn [platform]
+                            (as-ruby-literal
+                             (concat (get-val platform :install) all-install-cmds)))
         get-local #(get-local-ezbake-var lein-project %1 %2)
         local->ruby #(as-ruby-literal (get-local %1 %2))]
     {:project                            (as-ruby-literal (:name lein-project))
@@ -622,7 +763,7 @@ Additional uberjar dependencies:
      :debian-prerm                       (val->ruby :debian :prerm)
      :debian-postinst                    (val->ruby :debian :postinst)
      :debian-postinst-install            (val->ruby :debian :postinst-install)
-     :debian-install                     (val->ruby :debian :install)
+     :debian-install                     (val->ruby-install :debian)
      :debian-pre-start-action            (val->ruby :debian :pre-start-action)
      :debian-post-start-action           (val->ruby :debian :post-start-action)
      :debian-activated-triggers          (local->ruby :debian-activated-triggers [])
@@ -635,7 +776,7 @@ Additional uberjar dependencies:
      :redhat-preinst                     (val->ruby :redhat :preinst)
      :redhat-postinst                    (val->ruby :redhat :postinst)
      :redhat-postinst-install            (val->ruby :redhat :postinst-install)
-     :redhat-install                     (val->ruby :redhat :install)
+     :redhat-install                     (val->ruby-install :redhat)
      :redhat-pre-start-action            (val->ruby :redhat :pre-start-action)
      :redhat-post-start-action           (val->ruby :redhat :post-start-action)
      :terminus-map                       termini
@@ -687,6 +828,8 @@ Additional uberjar dependencies:
    terminus-files
    upstream-ezbake-configs
    additional-uberjars
+   classpath-jar-results
+   project-file-results
    timestamp]
   (lein-main/info "generating ezbake config file")
   (spit
@@ -702,6 +845,8 @@ Additional uberjar dependencies:
                        terminus-files
                        upstream-ezbake-configs
                        additional-uberjars
+                       classpath-jar-results
+                       project-file-results
                        timestamp))))
 
 (defn generate-project-data-yaml
@@ -939,6 +1084,8 @@ Additional uberjar dependencies:
           upstream-ezbake-configs (get-upstream-ezbake-configs lein-project)
           additional-uberjar-info (build-additional-uberjars! lein-project)
           additional-uberjar-filenames (map #(fs/base-name (:uberjar %)) additional-uberjar-info)
+          classpath-jar-results (cp-classpath-jars lein-project)
+          project-file-results (cp-project-files lein-project)
           timestamp (get-timestamp-string)]
       (cp-shared-files non-excluded-deps get-cli-defaults-files-in)
       (cp-shared-files non-excluded-deps get-build-scripts-files-in)
@@ -965,6 +1112,8 @@ Additional uberjar dependencies:
                                     terminus-files
                                     upstream-ezbake-configs
                                     additional-uberjar-filenames
+                                    classpath-jar-results
+                                    project-file-results
                                     timestamp)
       (let [project-w-deployed-version (assoc lein-project :version deployed-version)]
         (generate-project-data-yaml project-w-deployed-version build-target additional-uberjar-filenames)

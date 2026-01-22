@@ -90,5 +90,5 @@
              (clojure.data/diff
               expected
               (core/make-template-map dummy-project "dummy-build-target"
-                                      [] [] [] [] [] {} []
+                                      [] [] [] [] [] {} [] [] []
                                       (core/get-timestamp-string))))))))
