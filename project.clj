@@ -1,4 +1,4 @@
-(defproject org.openvoxproject/lein-ezbake "2.7.3"
+(defproject org.openvoxproject/lein-ezbake "2.7.4-SNAPSHOT"
   :description "A system for building packages for trapperkeeper-based applications"
   :url "https://github.com/openvoxproject/ezbake"
   :license {:name "Apache License 2.0"
