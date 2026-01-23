@@ -12,3 +12,5 @@ target
 Gemfile.lock
 .bundle
 .vendor
+/.idea
+/lein-ezbake.iml
