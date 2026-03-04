@@ -296,7 +296,7 @@ shared_opts << "--version #{options.version}"
 shared_opts << "--iteration #{options.release}"
 shared_opts << "--vendor 'Vox Pupuli <openvox@voxpupuli.org>'"
 shared_opts << "--maintainer 'Vox Pupuli <openvox@voxpupuli.org>'"
-shared_opts << "--license 'ASL 2.0'"
+shared_opts << "--license 'Apache-2.0'"
 
 shared_opts << "--url http://github.com/openvoxproject"
 shared_opts << "--architecture all"
