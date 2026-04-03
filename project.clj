@@ -7,7 +7,7 @@
   :dependencies [[me.raynes/fs "1.4.6" :exclusions [org.clojure/clojure]]
                  [me.raynes/conch "0.8.0"]
                  [clj-time "0.15.2"]
-                 [cheshire "6.1.0"]
+                 [cheshire "6.2.0"]
                  [prismatic/schema "1.4.1"]
                  [org.openvoxproject/typesafe-config "1.0.1" :exclusions [org.clojure/clojure]]]
 
