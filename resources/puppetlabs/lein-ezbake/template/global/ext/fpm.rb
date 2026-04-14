@@ -166,6 +166,10 @@ if options.sources.empty?
 end
 options.dist = "#{options.operating_system}#{options.os_version}" if options.dist.nil?
 
+# values can be... unexpected, so log them
+warn "options.os_version is: #{options.os_version}"
+warn "options.dist is: #{options.dist}"
+
 fpm_opts = Array('')
 shared_opts = Array('')
 termini_opts = Array('')
@@ -294,8 +298,6 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless'
-
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
   fpm_opts << '--deb-build-depends mawk'
@@ -309,6 +311,37 @@ elsif options.output_type == 'deb'
 
    options.deb_activate_triggers.each do |trigger|
     fpm_opts << "--deb-activate #{trigger}"
+  end
+
+  # figure out correct java dependency
+  case options.dist
+  when 'debian11' # Bullseye
+    options.java = 'openjdk-17-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
+  when 'debian12' # Bookworm
+    options.java = 'openjdk-17-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
+  when 'debian13' # Trixie
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu20.04' # Focal Fossa
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu22.04' # Jammy Jellyfish
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu24.04' # Noble Numbat
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu25.04' # Plucky Puffin
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu25.10' # Questing Quokka
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  when 'ubuntu26.04' # Resolute Raccoon
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
   end
 end
 
