@@ -15,7 +15,6 @@ unitdir_redhat=${unitdir:-/usr/lib/systemd/system}
 unitdir_debian=${unitdir:-/lib/systemd/system}
 defaultsdir_redhat=${defaultsdir:-/etc/sysconfig}
 defaultsdir_debian=${defaultsdir:-/etc/default}
-tmpfilesdir=${tmpfilesdir:=/usr/lib/tmpfiles.d}
 datadir=${datadir:=${prefix}/share}
 real_name=${real_name:=<%= EZBake::Config[:real_name] -%>}
 projdatadir=${projdatadir:=${datadir}/${real_name}}
@@ -229,8 +228,6 @@ function task_systemd_redhat {
     task defaults_redhat
     install -d -m 0755 "${DESTDIR}${unitdir_redhat}"
     install -m 0644 ext/redhat/<%= EZBake::Config[:project] %>.service "${DESTDIR}${unitdir_redhat}/<%= EZBake::Config[:project] %>.service"
-    install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 # Install the systemd and defaults configuration for Debian.
@@ -238,8 +235,6 @@ function task_systemd_deb {
     task defaults_deb
     install -d -m 0755 "${DESTDIR}${unitdir_debian}"
     install -m 0644 ext/debian/<%= EZBake::Config[:project] %>.service_file "${DESTDIR}${unitdir_debian}/<%= EZBake::Config[:project] %>.service"
-    install -d -m 0755 "${DESTDIR}${tmpfilesdir}"
-    install -m 0644 ext/<%= EZBake::Config[:project] %>.tmpfiles.conf "${DESTDIR}${tmpfilesdir}/<%= EZBake::Config[:project] %>.conf"
 }
 
 function task_service_account {
