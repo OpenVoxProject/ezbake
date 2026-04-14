@@ -315,33 +315,16 @@ elsif options.output_type == 'deb'
 
   # figure out correct java dependency
   case options.dist
-  when 'debian11' # Bullseye
+  # Bullseye, Bookworm
+  when 'debian11','debian12'
     options.java = 'openjdk-17-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
-  when 'debian12' # Bookworm
-    options.java = 'openjdk-17-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
-  when 'debian13' # Trixie
+  # Trixie, Focal Fossa, Jammy Jellyfish, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon
+  when 'debian13', 'ubuntu20.04', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04'
     options.java = 'openjdk-21-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu20.04' # Focal Fossa
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu22.04' # Jammy Jellyfish
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu24.04' # Noble Numbat
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu25.04' # Plucky Puffin
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu25.10' # Questing Quokka
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  when 'ubuntu26.04' # Resolute Raccoon
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  else
+    fail "no matching OS data found for #{options.dist}"
   end
 end
 
