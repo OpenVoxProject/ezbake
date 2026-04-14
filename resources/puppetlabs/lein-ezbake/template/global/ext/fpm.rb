@@ -5,6 +5,31 @@ require 'optparse'
 require 'ostruct'
 
 options = OpenStruct.new
+
+# ezbake.rb is rendered from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+#
+# inside the build container, fpm.rb is at:
+# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
+# ezbake:
+# /code/target/staging/ezbake.rb
+#
+# we do this hula hoop jump because in our build process the ezbake.rb exists
+# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
+# fpm.rb is executed while we build the packages. This is the same process as
+# compiling the jar and rendering ezbake from
+# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
+# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
+#
+# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
+begin
+  require_relative '../../ezbake'
+rescue LoadError
+  options.java_bin = '/usr/bin/java'
+else
+  options.java_bin = EZBake::Config[:java_bin]
+end
+
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
@@ -141,6 +166,10 @@ if options.sources.empty?
 end
 options.dist = "#{options.operating_system}#{options.os_version}" if options.dist.nil?
 
+# values can be... unexpected, so log them
+warn "options.os_version is: #{options.os_version}"
+warn "options.dist is: #{options.dist}"
+
 fpm_opts = Array('')
 shared_opts = Array('')
 termini_opts = Array('')
@@ -269,8 +298,6 @@ elsif options.output_type == 'deb'
     options.release = "#{options.release}+#{options.dist}"
   end
 
-  options.java = 'openjdk-21-jre-headless | openjdk-17-jre-headless'
-
   fpm_opts << '--deb-build-depends cdbs'
   fpm_opts << '--deb-build-depends bc'
   fpm_opts << '--deb-build-depends mawk'
@@ -284,6 +311,20 @@ elsif options.output_type == 'deb'
 
    options.deb_activate_triggers.each do |trigger|
     fpm_opts << "--deb-activate #{trigger}"
+  end
+
+  # figure out correct java dependency
+  case options.dist
+  # Bullseye, Bookworm
+  when 'debian11','debian12'
+    options.java = 'openjdk-17-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
+  # Trixie, Focal Fossa, Jammy Jellyfish, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon
+  when 'debian13', 'ubuntu20.04', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04'
+    options.java = 'openjdk-21-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  else
+    fail "no matching OS data found for #{options.dist}"
   end
 end
 
