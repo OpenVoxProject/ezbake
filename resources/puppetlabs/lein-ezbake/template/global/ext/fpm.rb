@@ -159,7 +159,7 @@ if options.sources.empty?
                     when :amazon, :fedora, :sles, :el, :redhatfips
                       ['etc', 'opt', 'usr', 'var']
                     when :debian, :ubuntu
-                      ['etc', 'lib', 'opt', 'usr', 'var']
+                      ['etc', 'lib', 'opt', 'var']
                     else
                       fail "I don't know what your default sources should be, pass it on the command line!"
                     end
@@ -265,7 +265,6 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd"
   fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/systemd/system"
   fpm_opts << "--rpm-auto-add-exclude-directories /etc/logrotate.d"
-  fpm_opts << "--rpm-auto-add-exclude-directories /usr/lib/tmpfiles.d"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/log/puppetlabs"
   fpm_opts << "--rpm-auto-add-exclude-directories /var/run/puppetlabs"
   termini_opts << "--rpm-auto-add-exclude-directories /opt/puppetlabs/puppet"
