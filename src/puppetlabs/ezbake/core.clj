@@ -413,6 +413,8 @@ Additional uberjar dependencies:
    find the corresponding jar file on the resolved classpath. For artifacts where
    the group-id equals the artifact-id (e.g., commons-io), an unqualified symbol
    like 'commons-io may be used.
+   Falls back to resolving the artifact independently using the version from
+   :managed-dependencies if not found on the classpath.
    Returns the File for the jar, or nil if not found."
   [lein-project artifact-symbol :- schema/Symbol]
   (let [group-id (or (namespace artifact-symbol) (name artifact-symbol))
@@ -421,13 +423,30 @@ Additional uberjar dependencies:
                                         (java.util.regex.Pattern/quote artifact-id)))
         group-path (str/replace group-id "." "/")
         classifier-pattern #"-(sources|javadoc|tests)\.jar$"
-        classpath-jars (lein-classpath/resolve-managed-dependencies
-                        :dependencies :managed-dependencies lein-project)]
-    (->> classpath-jars
-         (filter #(and (re-find jar-pattern (.getPath %))
-                       (str/includes? (.getPath %) group-path)
-                       (not (re-find classifier-pattern (.getPath %)))))
-         first)))
+        find-jar (fn [jars]
+                   (->> jars
+                        (filter #(and (re-find jar-pattern (.getPath %))
+                                      (str/includes? (.getPath %) group-path)
+                                      (not (re-find classifier-pattern (.getPath %)))))
+                        first))
+        jar (find-jar (lein-classpath/resolve-managed-dependencies
+                        :dependencies :managed-dependencies lein-project))]
+    (or jar
+        (let [artifact-sym (symbol group-id artifact-id)
+              version (->> (:managed-dependencies lein-project)
+                           (filter #(= (first %) artifact-sym))
+                           first
+                           second)]
+          (if version
+            (do
+              (lein-main/info (format "Resolving %s %s independently (not on classpath)"
+                                      artifact-sym version))
+              (find-jar (lein-classpath/resolve-managed-dependencies
+                          :dependencies nil
+                          {:dependencies [[artifact-sym version]]
+                           :repositories (:repositories lein-project)})))
+            (lein-main/info (format "No version found in :managed-dependencies for %s"
+                                    artifact-sym)))))))
 
 (schema/defn cp-classpath-jar-to-staging
   "Copy a single jar from the classpath to the staging directory.
