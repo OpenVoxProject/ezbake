@@ -3,3 +3,4 @@ source ENV['GEM_SOURCE'] || 'https://rubygems.org'
 # 1.0.0 is the first OpenVoxProject release
 gem 'packaging', '~> 1.0', github: 'OpenVoxProject/packaging'
 gem 'fpm'
+gem 'ostruct'
