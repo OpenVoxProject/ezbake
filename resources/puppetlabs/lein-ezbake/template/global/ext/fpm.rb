@@ -233,6 +233,7 @@ if options.output_type == 'rpm'
 
   if options.systemd_sles == 1
     fpm_opts << "--rpm-tag '%{?systemd_requires}'"
+    fpm_opts << "--rpm-tag 'BuildRequires: systemd-rpm-macros'"
   end
 
   fpm_opts << "--config-files /etc/puppetlabs/#{options.realname}"
