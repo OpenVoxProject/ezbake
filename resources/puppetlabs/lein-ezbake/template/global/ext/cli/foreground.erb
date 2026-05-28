@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-restartfile="/opt/puppetlabs/server/data/<%= EZBake::Config[:real_name] %>/restartcounter"
-if [ ! -e "$restartfile" ]; then
-  printf '0' | /usr/bin/install -D -o "${USER:-<%= EZBake::Config[:user] %>}" -g "${GROUP:-<%= EZBake::Config[:group] %>}" -m 0644 /dev/stdin "$restartfile"
-fi
+# This file is meant to be used in containers to start the java process with correct parameters
 
 if ! (echo "${@}" | grep -e "--debug" -q)
 then
@@ -25,7 +22,6 @@ COMMAND="${JAVA_BIN} ${JAVA_ARGS} ${LOG_APPENDER} \
          -cp '${CLASSPATH}' \
          clojure.main -m <%= EZBake::Config[:main_namespace] %> \
          --config ${CONFIG} --bootstrap-config ${BOOTSTRAP_CONFIG} \
-         --restart-file '${restartfile}' \
          ${TK_ARGS} \
          ${@}"
 
