@@ -456,7 +456,7 @@ if options.debug
 end
 
 # fpm sends all output to stdout
-out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
+out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')} --debug")
 fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
 
 puts "#{out}"
