@@ -183,7 +183,6 @@ options.app_data = "/opt/puppetlabs/server/data/#{options.realname}"
 if options.output_type == 'rpm'
 
   shared_opts << "--rpm-digest sha256"
-  shared_opts << "--rpm-rpmbuild-define 'rpmversion #{options.version}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_logdir #{options.app_logdir}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_rundir #{options.app_rundir}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
