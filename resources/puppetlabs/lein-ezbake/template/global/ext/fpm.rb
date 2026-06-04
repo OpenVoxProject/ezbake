@@ -222,11 +222,11 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
-  if options.operating_system == :fedora # all supported fedoras are systemd and provide Java 21
+  if options.operating_system == :fedora # Fedora 41-45 are systemd and provide Java 25
     options.systemd = 1
     options.systemd_el = 1
-    options.java = 'jre-21-headless'
-    options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+    options.java = 'jre-25-headless'
+    options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
     options.java = 'java-17-amazon-corretto-headless'
