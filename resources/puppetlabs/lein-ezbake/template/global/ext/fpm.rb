@@ -352,8 +352,8 @@ elsif options.output_type == 'deb'
   when 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  # Trixie, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon, Stonking Stingray
-  when 'debian13', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04', 'ubuntu26.10'
+  # Trixie, Forky, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon, Stonking Stingray
+  when 'debian13', 'debian14', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04', 'ubuntu26.10'
     options.java = 'openjdk-25-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-25-openjdk-amd64/bin/java'
   else
