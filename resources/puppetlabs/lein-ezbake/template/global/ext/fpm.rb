@@ -344,10 +344,6 @@ elsif options.output_type == 'deb'
 
   # figure out correct java dependency
   case options.dist
-  # Bullseye, Bookworm
-  when 'debian11','debian12'
-    options.java = 'openjdk-17-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
   # Trixie, Focal Fossa,
   when 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
