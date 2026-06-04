@@ -235,11 +235,11 @@ if options.output_type == 'rpm'
   elsif options.operating_system == :el || options.operating_system == :redhatfips
     if options.os_version <= 7
       raise "el version #{options.os_version} is no longer supported"
-    elsif (8..9).include?(options.os_version)
-      options.java = 'jre-17-headless'
-      options.java_bin = '/usr/lib/jvm/jre-17/bin/java'
-    elsif options.os_version >= 10
+    elsif options.os_version == 8
       options.java = 'jre-21-headless'
+      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+    elsif options.os_version >= 9
+      options.java = 'jre-25-headless'
       options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     else
       fail "Unrecognized el os version #{options.os_version}"
