@@ -245,10 +245,13 @@ if options.output_type == 'rpm'
       fail "Unrecognized el os version #{options.os_version}"
     end
     options.systemd_el = 1
-  elsif options.operating_system == :sles
+  elsif options.operating_system == :sles && options.os_version >= 15
     options.systemd_sles = 1
     options.sles = 1
-    options.java = 'java-17-openjdk-headless'
+    options.java = 'java-25-openjdk-headless'
+    options.java_bin = '/usr/lib64/jvm/jre-25/bin/java'
+  else
+    fail "Unrecognized OS #{options.operating_system} version #{options.os_version}"
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
