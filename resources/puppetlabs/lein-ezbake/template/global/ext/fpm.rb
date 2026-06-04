@@ -233,9 +233,7 @@ if options.output_type == 'rpm'
     options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
-    if options.os_version <= 7
-      raise "el version #{options.os_version} is no longer supported"
-    elsif options.os_version == 8
+    if options.os_version == 8
       options.java = 'jre-21-headless'
       options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     elsif options.os_version >= 9
