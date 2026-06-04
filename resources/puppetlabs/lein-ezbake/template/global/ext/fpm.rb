@@ -348,10 +348,14 @@ elsif options.output_type == 'deb'
   when 'debian11','debian12'
     options.java = 'openjdk-17-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
-  # Trixie, Focal Fossa, Jammy Jellyfish, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon
-  when 'debian13', 'ubuntu20.04', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04'
+  # Trixie, Focal Fossa,
+  when 'debian13', 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
+  # Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon
+  when 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04'
+    options.java = 'openjdk-25-jre-headless'
+    options.java_bin = '/usr/lib/jvm/java-25-openjdk-amd64/bin/java'
   else
     fail "no matching OS data found for #{options.dist}"
   end
