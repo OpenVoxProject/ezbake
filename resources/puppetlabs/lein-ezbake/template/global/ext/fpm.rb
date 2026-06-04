@@ -240,7 +240,7 @@ if options.output_type == 'rpm'
       options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     elsif options.os_version >= 9
       options.java = 'jre-25-headless'
-      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+      options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
     else
       fail "Unrecognized el os version #{options.os_version}"
     end
