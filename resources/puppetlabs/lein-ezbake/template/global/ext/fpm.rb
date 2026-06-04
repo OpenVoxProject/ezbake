@@ -222,33 +222,34 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
-  if options.operating_system == :fedora # all supported fedoras are systemd and provide Java 21
+  if options.operating_system == :fedora # Fedora 41-45 are systemd and provide Java 25
     options.systemd = 1
     options.systemd_el = 1
-    options.java = 'jre-21-headless'
-    options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+    options.java = 'jre-25-headless'
+    options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
     options.java = 'java-17-amazon-corretto-headless'
     options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
-    if options.os_version <= 7
-      raise "el version #{options.os_version} is no longer supported"
-    elsif options.os_version == 8
+    if options.os_version == 8
       options.java = 'jre-21-headless'
       options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     elsif options.os_version >= 9
       options.java = 'jre-25-headless'
-      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
+      options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
     else
       fail "Unrecognized el os version #{options.os_version}"
     end
     options.systemd_el = 1
-  elsif options.operating_system == :sles
+  elsif options.operating_system == :sles && options.os_version >= 15
     options.systemd_sles = 1
     options.sles = 1
-    options.java = 'java-17-openjdk-headless'
+    options.java = 'java-25-openjdk-headless'
+    options.java_bin = '/usr/lib64/jvm/jre-25/bin/java'
+  else
+    fail "Unrecognized OS #{options.operating_system} version #{options.os_version}"
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
@@ -344,10 +345,6 @@ elsif options.output_type == 'deb'
 
   # figure out correct java dependency
   case options.dist
-  # Bullseye, Bookworm
-  when 'debian11','debian12'
-    options.java = 'openjdk-17-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-17-openjdk-amd64/bin/java'
   # Trixie, Focal Fossa,
   when 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
