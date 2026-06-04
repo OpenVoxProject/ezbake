@@ -223,14 +223,13 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
   if options.operating_system == :fedora # Fedora 41-45 are systemd and provide Java 25
-    options.systemd = 1
+
     options.systemd_el = 1
     options.java = 'jre-25-headless'
     options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
     options.java = 'java-17-amazon-corretto-headless'
-    options.systemd = 1
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
     if options.os_version == 8
