@@ -42,7 +42,7 @@ end
 
 def create_sles_rpmbuild_wrapper
   # This wrapper allows us to use the RPM macros from the systemd-rpm-macros
-  # opensuse package by supplying the --macros flag to rpmbuild.
+  # opensuse package from download.opensuse.org by supplying the --macros flag to rpmbuild.
   wrapper_dir = Dir.mktmpdir('sles-rpmbuild-wrapper')
   wrapper_path = File.join(wrapper_dir, 'rpmbuild')
 
