@@ -3,6 +3,27 @@
 require 'open3'
 require 'optparse'
 require 'ostruct'
+require 'tmpdir'
+
+def create_sles_rpmbuild_wrapper
+  # This wrapper allows us to use the RPM macros from the systemd-rpm-macros
+  # opensuse package by supplying the --macros flag to rpmbuild.
+  wrapper_dir = Dir.mktmpdir('sles-rpmbuild-wrapper')
+  wrapper_path = File.join(wrapper_dir, 'rpmbuild')
+
+  File.write(wrapper_path, <<~'SH')
+    #!/bin/sh
+
+    echo "Invoking rpmbuild wrapper with --macros flag" >&2
+
+    exec /usr/bin/rpmbuild \
+      --macros "/opt/suse-rpm-macros/usr/lib/rpm/macros.d/macros.systemd:/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/*" \
+      "$@"
+  SH
+
+  FileUtils.chmod(0755, wrapper_path)
+  wrapper_dir
+end
 
 options = OpenStruct.new
 
@@ -215,6 +236,7 @@ if options.output_type == 'rpm'
     options.systemd_sles = 1
     options.sles = 1
     options.java = 'java-17-openjdk-headless'
+    options.rpmbuild_wrapper_dir = create_sles_rpmbuild_wrapper
   end
 
   fpm_opts << "--rpm-rpmbuild-define '_systemd_el #{options.systemd_el}'"
@@ -454,8 +476,14 @@ if options.debug
   puts "#{Dir.pwd}"
 end
 
+env = {}
+if options.rpmbuild_wrapper_dir
+  # modify PATH to include the rpmbuild wrapper dir (if necessary)
+  env['PATH'] = "#{options.rpmbuild_wrapper_dir}:#{ENV['PATH']}"
+end
+
 # fpm sends all output to stdout
-out, _, stat = Open3.capture3("#{fpm_editor} fpm #{fpm_opts.join(' ')}")
+out, _, stat = Open3.capture3(env, "#{fpm_editor} fpm #{fpm_opts.join(' ')}")
 fail "Error trying to run FPM for #{options.dist}!\n#{out}" unless stat.success?
 
 puts "#{out}"
