@@ -18,9 +18,9 @@ jobs:
     name: Validate Ruby
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Setup ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1.316.0
         with:
           ruby-version: '4.0'
           bundler-cache: true
@@ -34,10 +34,10 @@ jobs:
     outputs:
       ezbake_version: ${{ steps.version.outputs.ezbake_version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       # install clojure tools
       - name: Install Clojure tools
-        uses: DeLaGuardo/setup-clojure@13.6.1
+        uses: DeLaGuardo/setup-clojure@4c7a6f613e5089821bb3bb2a33a3ee115578580d # 13.6.1
         with:
           lein: latest # Leiningen
       # used during the openvoxserver/db builds
@@ -56,15 +56,15 @@ jobs:
 
     name: Java ${{ matrix.java }} tests
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: setup java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
       # install clojure tools
       - name: Install Clojure tools
-        uses: DeLaGuardo/setup-clojure@13.6.1
+        uses: DeLaGuardo/setup-clojure@4c7a6f613e5089821bb3bb2a33a3ee115578580d # 13.6.1
         with:
           # Install just one or all simultaneously
           # The value must indicate a particular version of the tool, or use 'latest'
@@ -89,20 +89,20 @@ jobs:
             repository: 'OpenVoxProject/openvoxdb'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           repository: ${{ matrix.repository }}
           submodules: true
           fetch-depth: 0 # So we fetch all history and tags and can build non-tagged versions
       - name: Setup ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1.316.0
         with:
           ruby-version: '4.0'
           bundler-cache: true
       - name: Display Ruby environment
         run: bundle env
       - id: docker-cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/ezbake-builder.tar
           key: docker-ezbake-${{ matrix.project }}-${{ hashFiles('Dockerfile') }}
@@ -114,7 +114,7 @@ jobs:
             docker build -t ezbake-builder .
             docker save ezbake-builder -o /tmp/ezbake-builder.tar
           fi
-      - uses: actions/cache/save@v6
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: always() && steps.docker-cache.outputs.cache-hit != 'true'
         with:
           path: /tmp/ezbake-builder.tar
@@ -131,7 +131,7 @@ jobs:
           EZBAKE_BRANCH: $GITHUB_REF # https://docs.github.com/en/actions/reference/workflows-and-actions/variables
           EZBAKE_VERSION: ${{ needs.get-ezbake-version.outputs.ezbake_version }} # ensures that we used the built version of ezbake and don't pull from clojars.org
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         id: upload
         with:
           name: ${{ matrix.project }}-${{ steps.version.outputs.describe }}-ezbake-${{ needs.get-ezbake-version.outputs.ezbake_version }}.zip
@@ -139,7 +139,7 @@ jobs:
           retention-days: 1 # quite low retention, because the artifacts are quite large
           overwrite: true # overwrite old artifacts if a PR runs again (artifacts are per PR * per project)
       - name: Find existing comment
-        uses: peter-evans/find-comment@v4
+        uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
         if: github.event.pull_request.head.repo.full_name == github.repository
         id: find-comment
         with:
@@ -147,7 +147,7 @@ jobs:
           comment-author: 'github-actions[bot]'
           body-includes: '<!-- build-artifacts -->'
       - name: Add or update comment
-        uses: peter-evans/create-or-update-comment@v5
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         if: github.event.pull_request.head.repo.full_name == github.repository
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
@@ -169,6 +169,6 @@ jobs:
     name: Test suite
     steps:
       - name: Decide whether the needed jobs succeeded or failed
-        uses: re-actors/alls-green@release/v1
+        uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
         with:
           jobs: ${{ toJSON(needs) }}
