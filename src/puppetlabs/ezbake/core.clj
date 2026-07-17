@@ -686,9 +686,9 @@ Additional uberjar dependencies:
   [lein-version]
   {:pre [(string? lein-version)]
    :post [(string? %)]}
-  (if (.endsWith lein-version "-SNAPSHOT")
-    (format "%s"
-            (str/replace lein-version #"-SNAPSHOT|-" { "-SNAPSHOT" "" "-" "."}))
+  (condp re-find lein-version
+    #"\A\d+\.\d+\.\d+-(?:alpha|beta|rc)\d+\z" (str/replace lein-version "-" "~")
+    #"-SNAPSHOT$" (str/replace lein-version #"-SNAPSHOT|-" { "-SNAPSHOT" "" "-" "."})
     lein-version))
 
 (defn generate-package-release-from-version
