@@ -687,7 +687,7 @@ Additional uberjar dependencies:
   {:pre [(string? lein-version)]
    :post [(string? %)]}
   (condp re-find lein-version
-    #"\A\d+\.\d+\.\d+-(?:alpha|beta|rc)\d+" (str/replace lein-version "-" "~")
+    #"\A\d+\.\d+\.\d+-(?:alpha|beta|rc)\d+\z" (str/replace lein-version "-" "~")
     #"-SNAPSHOT$" (str/replace lein-version #"-SNAPSHOT|-" { "-SNAPSHOT" "" "-" "."})
     lein-version))
 
