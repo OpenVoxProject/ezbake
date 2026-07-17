@@ -105,11 +105,13 @@
     (is (= "8.3.0.beta1" (core/generate-package-version-from-version "8.3.0-beta1-SNAPSHOT")))
     (is (= "9.4.1.beta1" (core/generate-package-version-from-version "9.4.1-beta1-SNAPSHOT")))
     (is (= "9.4.1.beta1.hotfix" (core/generate-package-version-from-version "9.4.1-beta1-hotfix-SNAPSHOT"))))
+  (testing "tagged pre-release versions are munged to include a tilde"
+    (is (= "8.0.0~alpha2" (core/generate-package-version-from-version "8.0.0-alpha2")))
+    (is (= "9.4.1~beta1" (core/generate-package-version-from-version "9.4.1-beta1")))
+    (is (= "10.0.0~rc0" (core/generate-package-version-from-version "10.0.0-rc0"))))
   (testing "non-snapshot versions are unchanged"
     (is (= "8.0.0" (core/generate-package-version-from-version "8.0.0")))
-    (is (= "9.1.2+build7" (core/generate-package-version-from-version "9.1.2+build7")))
-    (is (= "10.0.0-RC1" (core/generate-package-version-from-version "10.0.0-RC1")))
-    (is (= "9.4.1-beta1" (core/generate-package-version-from-version "9.4.1-beta1"))))
+    (is (= "9.1.2+build7" (core/generate-package-version-from-version "9.1.2+build7"))))
   (testing "input contract enforces string argument"
     (is (thrown? AssertionError
                  (core/generate-package-version-from-version 9)))))
