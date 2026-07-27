@@ -25,14 +25,11 @@ COMMAND="${JAVA_BIN} ${JAVA_ARGS} ${LOG_APPENDER} \
          ${TK_ARGS} \
          ${@}"
 
-pushd "${INSTALL_DIR}" &> /dev/null
-if [ "$EUID" = "0" ] && command -v runuser &> /dev/null; then
-  runuser "${USER}" -s /bin/bash -c "$COMMAND"
-elif [ "$EUID" = "$(id -u ${USER})" ]; then
-  /bin/bash -c "$COMMAND"
-elif command -v sudo &> /dev/null; then
-  sudo -H -u "${USER}" $COMMAND
-else
-  su "${USER}" -s /bin/bash -c "$COMMAND"
+cd "${INSTALL_DIR}"
+if [ "$EUID" = "0" ] && [ -n "${USER}" ] && command -v runuser &> /dev/null; then
+  # started as root: drop to the service user
+  exec runuser "${USER}" -s /bin/bash -c "$COMMAND"
 fi
-popd &> /dev/null
+# containers set the runtime UID before this script runs (USER directive,
+# --user, runAsUser), so run as the current user - whatever UID that is
+exec /bin/bash -c "$COMMAND"
