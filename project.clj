@@ -8,7 +8,7 @@
                  [me.raynes/conch "0.8.0"]
                  [clj-time "0.15.2"]
                  [cheshire "6.2.0"]
-                 [prismatic/schema "1.4.1"]
+                 [prismatic/schema "1.4.2"]
                  [org.openvoxproject/typesafe-config "1.0.4" :exclusions [org.clojure/clojure]]]
 
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
