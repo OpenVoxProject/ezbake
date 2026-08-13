@@ -254,7 +254,13 @@ if options.output_type == 'rpm'
     options.java_bin = '/usr/lib/jvm/java-25-amazon-corretto.x86_64/bin/java'
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
-    if options.os_version == 8
+    # All RedHat FIPS versions must use Java 21 as BouncyCastle is not
+    # FIPS certified for any newer JVM versions:
+    #
+    # > The 2.1.0 release, BC-FJA 2.1.0 (Certificate #4943) , is certified for
+    # > use on Java 8, Java 11, Java 17, and Java 21.
+    # https://www.bouncycastle.org/download/bouncy-castle-java-fips/
+    if options.os_version == 8 || options.operating_system == :redhatfips
       options.java = 'jre-21-headless'
       options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     elsif options.os_version >= 9
