@@ -233,7 +233,7 @@ if options.output_type == 'rpm'
       options.java = 'java-25-amazon-corretto-headless'
       options.java_bin = '/usr/lib/jvm/java-25-amazon-corretto.x86_64/bin/java'
     end
-  elsif options.operating_system == :el || options.operating_system == :redhatfips
+  elsif options.operating_system == :el
     options.systemd_el = 1
 
     case [options.os_version, options.platform_version]
@@ -251,6 +251,33 @@ if options.output_type == 'rpm'
     in [9 | 10, 9]
       options.java = 'jre-25-headless'
       options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
+    else
+      fail "Unrecognized el os version #{options.os_version} for platform #{options.platform_version}"
+    end
+  elsif options.operating_system == :redhatfips
+    options.systemd_el = 1
+
+    case [options.platform_version]
+    # OpenVox 8.x
+    in [8]
+      # All RedHat FIPS versions must use Java 17 as BouncyCastle 1.x is not
+      # FIPS certified for any newer JVM versions:
+      #
+      # > The 1.0.2.4 release, BC-FJA 1.0.2.4, was certified for use on Java 7,
+      # Java 8, Java 11, and Java 17.
+      # https://www.bouncycastle.org/download/bouncy-castle-java-fips/
+      options.java = 'jre-17-headless'
+      options.java_bin = '/usr/lib/jvm/jre-17/bin/java'
+    # OpenVox 9.x
+    in [9]
+      # All RedHat FIPS versions must use Java 21 as BouncyCastle 2.x is not
+      # FIPS certified for any newer JVM versions:
+      #
+      # > The 2.1.0 release, BC-FJA 2.1.0 (Certificate #4943) , is certified for
+      # > use on Java 8, Java 11, Java 17, and Java 21.
+      # https://www.bouncycastle.org/download/bouncy-castle-java-fips/
+      options.java = 'jre-21-headless'
+      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
     else
       fail "Unrecognized el os version #{options.os_version} for platform #{options.platform_version}"
     end
