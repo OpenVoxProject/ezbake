@@ -373,7 +373,7 @@ elsif options.output_type == 'deb'
 
   # figure out correct java dependency
   case options.dist
-  # Trixie, Focal Fossa,
+  # Focal Fossa,
   when 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
     options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
