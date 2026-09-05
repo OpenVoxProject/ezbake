@@ -7,36 +7,57 @@ require 'ostruct'
 require 'tmpdir'
 
 def patch_files(options)
-  if options.java_bin == EZBake::Config[:java_bin]
-    yield
-  else
-    suffix = '.backup'
-    [
-      # Debian
-      '/etc/default/puppet*',
-      '/lib/systemd/system/puppet*.service',
-      # RPM
-      '/usr/lib/systemd/system/puppet*.service',
-      '/etc/sysconfig/puppet*',
-    ].each do |path|
-      Dir.glob(File.join(options.chdir, path)).each do |real_path|
-        content = File.read(real_path)
-        next unless content.include?(EZBake::Config[:java_bin])
+  suffix = '.backup'
+  [
+    # Debian
+    '/etc/default/puppet*',
+    '/lib/systemd/system/puppet*.service',
+    # RPM
+    '/usr/lib/systemd/system/puppet*.service',
+    '/etc/sysconfig/puppet*',
+  ].each do |path|
+    Dir.glob(File.join(options.chdir, path)).each do |real_path|
+      content = File.read(real_path)
 
-        warn "Copying #{real_path} to #{real_path}#{suffix}"
-        FileUtils.cp(real_path, "#{real_path}#{suffix}")
+      warn "Copying #{real_path} to #{real_path}#{suffix}"
+      FileUtils.cp(real_path, "#{real_path}#{suffix}")
+
+      if content.include?(EZBake::Config[:java_bin])
         warn "Patching #{real_path} to use #{options.java_bin}"
-        File.write(real_path, content.gsub(EZBake::Config[:java_bin], options.java_bin))
+        content.gsub!(EZBake::Config[:java_bin], options.java_bin)
       end
-    end
 
-    yield
+      if real_path.end_with?('.service') && notify_reload?(options)
+        warn "Patching #{real_path} to use Type=notify-reload"
+        content.sub!(/^Type=notify$/, 'Type=notify-reload')
+        # Swallow the trailing newline so we don't leave a blank line behind.
+        content.sub!(/^ExecReload=[^\n]*\n/, '')
+      end
 
-    Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
-      original = File.join(File.dirname(path), File.basename(path, suffix))
-      warn "Restoring #{path} to #{original}"
-      FileUtils.mv(path, original)
+      File.write(real_path, content)
     end
+  end
+
+  yield
+
+  Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
+    original = File.join(File.dirname(path), File.basename(path, suffix))
+    warn "Restoring #{path} to #{original}"
+    FileUtils.mv(path, original)
+  end
+end
+
+# Type=notify-reload was introduced in systemd v253. Anything older has to stay
+# on Type=notify plus an explicit ExecReload.
+def notify_reload?(options)
+  case [options.operating_system, options.os_version.to_s, options.dist]
+  in [:redhatfips, _, _] then false         # Built against EL 8 and 9
+  in [:el, '8' | '9', _] then false         # systemd 239 and 252
+  in [:amazon, '2023', _] then false        # systemd 252
+  in [:sles, '15', _] then false            # systemd 249 up to and including SP5
+  in [:debian, _, 'ubuntu22.04'] then false # systemd 249
+  else
+    true
   end
 end
 
