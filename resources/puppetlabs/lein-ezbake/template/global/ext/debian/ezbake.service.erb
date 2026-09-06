@@ -19,7 +19,7 @@ Wants=<%= EZBake::Config[:start_after].map {|dep| "#{dep}.service" }.join(" ") %
 <% end -%>
 
 [Service]
-Type=notify-reload
+Type=notify
 LogsDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
 RuntimeDirectory=puppetlabs/<%= EZBake::Config[:real_name] %>
 EnvironmentFile=/etc/default/<%= EZBake::Config[:project] %>
@@ -59,7 +59,10 @@ ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS $LOG_APPENDER -Dlogappende
   -m <%= EZBake::Config[:main_namespace] %> \
   --config "${CONFIG}" \
   --bootstrap-config "${BOOTSTRAP_CONFIG}" \
+  --restart-file /run/puppetlabs/<%= EZBake::Config[:real_name] %>/restartcounter \
   $TK_ARGS
+
+ExecReload=/opt/puppetlabs/server/apps/<%= EZBake::Config[:real_name] %>/bin/<%= EZBake::Config[:real_name] %> reload
 
 KillMode=process
 
