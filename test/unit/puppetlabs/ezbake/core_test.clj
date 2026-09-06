@@ -71,6 +71,7 @@
                     :project "'dummy'"
                     :debian-postinst-install "[]"
                     :java-args-cli "''"
+                    :java-args-dist "''"
                     :java-bin "'/usr/bin/java'"
                     :cli-defaults-file "'ext/cli_defaults/cli-defaults.sh'"
                     :debian-install "[]"
