@@ -79,7 +79,8 @@ function execsubcommand {
     if [ -e ${cmd} ]; then
         exec "${cmd}" "$@"
     else
-        echo "<%= EZBake::Config[:real_name] %>: '${sub}' is not a <%= EZBake::Config[:real_name] %> command. See '$(basename $0) --help'."
+        echo "<%= EZBake::Config[:real_name] %>: '${sub}' is not a <%= EZBake::Config[:real_name] %> command. See '$(basename $0) --help'." >&2
+        exit 1
     fi
 }
 
