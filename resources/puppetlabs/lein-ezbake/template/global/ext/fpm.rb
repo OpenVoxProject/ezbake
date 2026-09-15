@@ -7,7 +7,8 @@ require 'ostruct'
 require 'tmpdir'
 
 def patch_files(options)
-  suffix = '.backup'
+  # The unpatched content stays in memory so fpm only sees the real files
+  originals = {}
   [
     # Debian
     '/etc/default/puppet*',
@@ -18,9 +19,7 @@ def patch_files(options)
   ].each do |path|
     Dir.glob(File.join(options.chdir, path)).each do |real_path|
       content = File.read(real_path)
-
-      warn "Copying #{real_path} to #{real_path}#{suffix}"
-      FileUtils.cp(real_path, "#{real_path}#{suffix}")
+      originals[real_path] = content.dup
 
       if content.include?(EZBake::Config[:java_bin])
         warn "Patching #{real_path} to use #{options.java_bin}"
@@ -38,12 +37,13 @@ def patch_files(options)
     end
   end
 
-  yield
-
-  Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
-    original = File.join(File.dirname(path), File.basename(path, suffix))
-    warn "Restoring #{path} to #{original}"
-    FileUtils.mv(path, original)
+  begin
+    yield
+  ensure
+    originals.each do |real_path, content|
+      warn "Restoring #{real_path}"
+      File.write(real_path, content)
+    end
   end
 end
 
