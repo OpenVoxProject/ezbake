@@ -272,7 +272,7 @@ if options.output_type == 'rpm'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
     options.java = 'java-25-amazon-corretto-headless'
-    options.java_bin = '/usr/lib/jvm/java-25-amazon-corretto.x86_64/bin/java'
+    options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
     # All RedHat FIPS versions must use Java 21 as BouncyCastle is not
