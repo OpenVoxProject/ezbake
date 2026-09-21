@@ -55,7 +55,7 @@ ExecStartPre=<%= action %>
 ExecStart=<%= EZBake::Config[:java_bin] %> $JAVA_ARGS_DIST $JAVA_ARGS -Dlogappender=F1 \
   -XX:+CrashOnOutOfMemoryError \
   -XX:ErrorFile="${LOGS_DIRECTORY}/<%= EZBake::Config[:real_name] %>_err_pid%p.log" \
-  -cp "${INSTALL_DIR}/<%= EZBake::Config[:uberjar_name] %>" \
+  -cp "$/opt/puppetlabs/server/data/<%= EZBake::Config[:real_name] %>/jars/*:{INSTALL_DIR}/<%= EZBake::Config[:uberjar_name] %>" \
   clojure.main \
   -m <%= EZBake::Config[:main_namespace] %> \
   --config "${CONFIG}" \
