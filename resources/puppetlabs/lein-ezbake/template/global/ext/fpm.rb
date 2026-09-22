@@ -7,7 +7,8 @@ require 'ostruct'
 require 'tmpdir'
 
 def patch_files(options)
-  suffix = '.backup'
+  # The unpatched content stays in memory so fpm only sees the real files
+  originals = {}
   [
     # Debian
     '/etc/default/puppet*',
@@ -18,9 +19,7 @@ def patch_files(options)
   ].each do |path|
     Dir.glob(File.join(options.chdir, path)).each do |real_path|
       content = File.read(real_path)
-
-      warn "Copying #{real_path} to #{real_path}#{suffix}"
-      FileUtils.cp(real_path, "#{real_path}#{suffix}")
+      originals[real_path] = content.dup
 
       if content.include?(EZBake::Config[:java_bin])
         warn "Patching #{real_path} to use #{options.java_bin}"
@@ -38,12 +37,13 @@ def patch_files(options)
     end
   end
 
-  yield
-
-  Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
-    original = File.join(File.dirname(path), File.basename(path, suffix))
-    warn "Restoring #{path} to #{original}"
-    FileUtils.mv(path, original)
+  begin
+    yield
+  ensure
+    originals.each do |real_path, content|
+      warn "Restoring #{real_path}"
+      File.write(real_path, content)
+    end
   end
 end
 
@@ -272,7 +272,7 @@ if options.output_type == 'rpm'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
     options.java = 'java-25-amazon-corretto-headless'
-    options.java_bin = '/usr/lib/jvm/java-25-amazon-corretto.x86_64/bin/java'
+    options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
     # All RedHat FIPS versions must use Java 21 as BouncyCastle is not
@@ -392,16 +392,17 @@ elsif options.output_type == 'deb'
     fpm_opts << "--deb-activate #{trigger}"
   end
 
-  # figure out correct java dependency
+  # figure out correct java dependency. The java binary stays at the
+  # /usr/bin/java alternatives symlink because the Debian JVM directories
+  # embed the architecture, for example java-25-openjdk-amd64, and these
+  # packages are built as Architecture: all.
   case options.dist
   # Focal Fossa,
   when 'ubuntu20.04'
     options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
   # Trixie, Forky, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon, Stonking Stingray
   when 'debian13', 'debian14', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04', 'ubuntu26.10'
     options.java = 'openjdk-25-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-25-openjdk-amd64/bin/java'
   else
     fail "no matching OS data found for #{options.dist}"
   end
