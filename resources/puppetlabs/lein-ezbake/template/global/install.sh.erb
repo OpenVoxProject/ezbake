@@ -147,6 +147,9 @@ function task_install {
     install -d -m 0755 "${dest_apps_dir}/scripts"
     install -m 0755 install.sh "${dest_apps_dir}/scripts"
 
+    install -d -m 0755 "${DESTDIR}${bindir}"
+    install -m 0755 ext/bin/java "${DESTDIR}${bindir}/java"
+
 <% if ! EZBake::Config[:cli_app_files].empty? -%>
     install -d -m 0755 "${dest_apps_dir}/cli"
     install -d -m 0755 "${dest_apps_dir}/cli/apps"

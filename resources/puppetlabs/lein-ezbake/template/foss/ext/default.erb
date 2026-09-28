@@ -2,8 +2,10 @@
 # Init settings for <%= EZBake::Config[:project] %>
 ###########################################
 
-# used by openvox-server CLI apps, not by the systemd unit
-JAVA_BIN="<%= EZBake::Config[:java_bin] %>"
+# The service and the CLI apps run the Java runtime chosen by
+# /opt/puppetlabs/server/apps/<%= EZBake::Config[:real_name] %>/bin/java.
+# Set JAVA_BIN to run a different one.
+#JAVA_BIN="/path/to/bin/java"
 
 # Modify this if you'd like to change the memory allocation, enable JMX, etc
 JAVA_ARGS="<%= EZBake::Config[:java_args] %>"

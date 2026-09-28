@@ -53,6 +53,12 @@
 (def BootstrapSource
   (schema/enum :bootstrap-cfg :services-d))
 
+(def JavaVersions
+  "Java major versions separated by single spaces, most preferred first."
+  (schema/constrained schema/Str
+                      #(re-matches #"\d+( \d+)*" %)
+                      'java-major-versions-separated-by-spaces))
+
 (def ReplacesPkgs
   [{:package schema/Str
     :version schema/Str}])
@@ -109,7 +115,7 @@
    (schema/optional-key :java-args) schema/Str
    (schema/optional-key :java-args-cli) schema/Str
    (schema/optional-key :java-args-dist) schema/Str
-   (schema/optional-key :java-bin) schema/Str
+   (schema/optional-key :java-versions) JavaVersions
    (schema/optional-key :tk-args) schema/Str
    (schema/optional-key :redhat-postinst-install-triggers) RPMTriggers
    (schema/optional-key :redhat-postinst-upgrade-triggers) RPMTriggers
@@ -824,8 +830,7 @@ Additional uberjar dependencies:
                                                       "-Xmx192m")
      :java-args-cli                      (local->ruby :java-args-cli "")
      :java-args-dist                     (local->ruby :java-args-dist "")
-     :java-bin                           (local->ruby :java-bin
-                                                      "/usr/bin/java")
+     :java-versions                      (local->ruby :java-versions "25 21")
      :tk-args                            (local->ruby :tk-args "")
      :bootstrap-source                   (-> (get-local :bootstrap-source :bootstrap-cfg)
                                              name as-ruby-literal)

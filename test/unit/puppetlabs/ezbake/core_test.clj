@@ -72,7 +72,7 @@
                     :debian-postinst-install "[]"
                     :java-args-cli "''"
                     :java-args-dist "''"
-                    :java-bin "'/usr/bin/java'"
+                    :java-versions "'25 21'"
                     :cli-defaults-file "'ext/cli_defaults/cli-defaults.sh'"
                     :debian-install "[]"
                     :redhat-postinst-install-triggers []
@@ -94,6 +94,28 @@
               (core/make-template-map dummy-project "dummy-build-target"
                                       [] [] [] [] [] {} [] [] []
                                       (core/get-timestamp-string))))))))
+
+(defn- project-with-java-versions
+  [java-versions]
+  (assoc-in dummy-project [:lein-ezbake :vars :java-versions] java-versions))
+
+(deftest java-versions-var
+  (testing "a project setting replaces the default list"
+    (is (= "'21'"
+           (:java-versions
+            (core/make-template-map (project-with-java-versions "21")
+                                    "dummy-build-target"
+                                    [] [] [] [] [] {} [] [] []
+                                    (core/get-timestamp-string))))))
+  (testing "major versions separated by single spaces are valid"
+    (doseq [java-versions ["21" "25 21" "25 21 17"]]
+      (is (nil? (core/validate! (project-with-java-versions java-versions)))
+          java-versions)))
+  (testing "any other format is rejected"
+    (doseq [java-versions ["" " " "25,21" "25  21" " 25" "25 " "java25" "25.0 21"]]
+      (is (thrown? IllegalArgumentException
+                   (core/validate! (project-with-java-versions java-versions)))
+          (pr-str java-versions)))))
 
 (deftest generate-package-version-from-version-behavior
   (testing "8+ and 9+ snapshot versions are normalized for packaging"
