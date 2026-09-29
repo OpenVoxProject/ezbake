@@ -201,6 +201,31 @@ For `cli-defaults.sh` to be used, it needs to exist at
 placed in an uberjar, it will not be recognized. Since it is an erb template, it
 will have access to the variables in `ezbake.rb`
 
+#### Java runtime
+
+Packages install a launcher at
+`/opt/puppetlabs/server/apps/<project>/bin/java`. The systemd unit and the CLI
+apps run the Java runtime it picks, never `/usr/bin/java`.
+
+The `:java-versions` variable lists the Java major versions a project supports,
+separated by spaces, most preferred first. It defaults to `"25 21"`.
+
+```clojure
+:lein-ezbake {:vars {:java-versions "25 21"}}
+```
+
+Packages depend on any one of these versions. The package manager installs the
+first one the distribution provides, unless another one is already installed.
+
+The launcher runs the first of these versions that the distribution has
+installed. When `JAVA_BIN` is set in `/etc/sysconfig/<project>` or
+`/etc/default/<project>`, the launcher runs that instead and does not check
+it. `/usr/bin/java` is what older packages wrote into that file, so it is
+treated as not set.
+
+Running the launcher without arguments prints the path of the runtime it would
+start.
+
 ### Running
 
 Running ezbake works much like any other Leiningen plugin or built-in task.

@@ -71,6 +71,7 @@ esac
 params=("--user" "<%= EZBake::Config[:user] -%>" "--group" "<%= EZBake::Config[:group] -%>" "--chdir" "$dir" "--realname" "<%= EZBake::Config[:real_name] -%>" "--operating-system" "$os" "--name" "<%= EZBake::Config[:package_name] -%>" "--package-version" "<%= EZBake::Config[:version] -%>" "--release" "<%= EZBake::Config[:release] -%>" "--platform-version" "<%= EZBake::Config[:platform_version] -%>")
 if [ -n "$os_version" ]; then params+=("--os-version" "$os_version"); fi
 if [ -n "$os_dist" ]; then params+=("--dist" "$os_dist"); fi
+params+=("--java-versions" "<%= EZBake::Config[:java_versions].split.join(',') -%>")
 
 params+=('--description' "$(printf "Vox Pupuli <%= EZBake::Config[:project] %>\nContains: <%= Pkg::Config.config[:description] -%>")")
 

@@ -7,27 +7,19 @@ require 'ostruct'
 require 'tmpdir'
 
 def patch_files(options)
-  suffix = '.backup'
+  # The unpatched content stays in memory so fpm only sees the real files
+  originals = {}
   [
     # Debian
-    '/etc/default/puppet*',
     '/lib/systemd/system/puppet*.service',
     # RPM
     '/usr/lib/systemd/system/puppet*.service',
-    '/etc/sysconfig/puppet*',
   ].each do |path|
     Dir.glob(File.join(options.chdir, path)).each do |real_path|
       content = File.read(real_path)
+      originals[real_path] = content.dup
 
-      warn "Copying #{real_path} to #{real_path}#{suffix}"
-      FileUtils.cp(real_path, "#{real_path}#{suffix}")
-
-      if content.include?(EZBake::Config[:java_bin])
-        warn "Patching #{real_path} to use #{options.java_bin}"
-        content.gsub!(EZBake::Config[:java_bin], options.java_bin)
-      end
-
-      if real_path.end_with?('.service') && notify_reload?(options)
+      if notify_reload?(options)
         warn "Patching #{real_path} to use Type=notify-reload"
         content.sub!(/^Type=notify$/, 'Type=notify-reload')
         # Swallow the trailing newline so we don't leave a blank line behind.
@@ -38,12 +30,13 @@ def patch_files(options)
     end
   end
 
-  yield
-
-  Dir.glob(File.join(options.chdir, '**', "*#{suffix}")).each do |path|
-    original = File.join(File.dirname(path), File.basename(path, suffix))
-    warn "Restoring #{path} to #{original}"
-    FileUtils.mv(path, original)
+  begin
+    yield
+  ensure
+    originals.each do |real_path, content|
+      warn "Restoring #{real_path}"
+      File.write(real_path, content)
+    end
   end
 end
 
@@ -81,38 +74,32 @@ def create_sles_rpmbuild_wrapper
   wrapper_dir
 end
 
-options = OpenStruct.new
-
-# ezbake.rb is rendered from
-# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
-#
-# inside the build container, fpm.rb is at:
-# /code/target/staging/puppetserver-8.9.0/ext/fpm.rb
-# ezbake:
-# /code/target/staging/ezbake.rb
-#
-# we do this hula hoop jump because in our build process the ezbake.rb exists
-# We also distribute a .tar.gz. This contains the compiled jar + fpm.rb.
-# fpm.rb is executed while we build the packages. This is the same process as
-# compiling the jar and rendering ezbake from
-# resources/puppetlabs/lein-ezbake/staging-templates/ezbake.rb.mustache
-# people that try to build their own package based on our tar, like FreeBSD, don't have the ezbake.rb
-#
-# patches welcome to move ezbake.rb into the tar *or* get rid of ezbake
-begin
-  require_relative '../../ezbake'
-rescue LoadError
-  options.java_bin = '/usr/bin/java'
-else
-  options.java_bin = EZBake::Config[:java_bin]
+def java_package(operating_system, version)
+  case operating_system
+  when :amazon then "java-#{version}-amazon-corretto-headless"
+  when :sles then "java-#{version}-openjdk-headless"
+  when :debian, :ubuntu then "openjdk-#{version}-jre-headless"
+  else "jre-#{version}-headless"
+  end
 end
+
+# The package depends on any one of the Java packages. apt installs the first
+# alternative it can find. The rpm solvers ignore the order of an or
+# dependency, so the first package is suggested to make them prefer it.
+def java_dependency_opts(output_type, packages)
+  return ["--depends '#{packages.join(' | ')}'"] if output_type == 'deb'
+  return ["--depends '#{packages.first}'"] if packages.one?
+
+  ["--depends '(#{packages.join(' or ')})'", "--rpm-tag 'Suggests: #{packages.first}'"]
+end
+
+options = OpenStruct.new
 
 # settin' some defaults
 options.systemd_el = 0
 options.systemd_sles = 0
 options.sles = 0
-options.java = 'java-1.8.0-openjdk-headless'
-options.java_bin = '/usr/bin/java'
+options.java_versions = []
 options.release = 1
 options.platform_version = 0
 options.replaces = {}
@@ -150,6 +137,9 @@ OptionParser.new do |opts|
   end
   opts.on('--platform-version VERSION', Integer, 'VERSION of the puppet platform this builds for') do |v|
     options.platform_version = v
+  end
+  opts.on('--java-versions <VERSIONS>', Array, 'comma-separated list of supported Java major VERSIONS, most preferred first') do |versions|
+    options.java_versions = versions
   end
   opts.on('--replaces <PKG,VERSION>', Array, 'PKG and VERSION replaced by this package. Can be passed multiple times.') do |pkg,ver|
     options.replaces[pkg] = ver
@@ -219,6 +209,7 @@ fail "--name is required!" unless options.name
 options.realname = options.name if options.realname.nil?
 fail "--package-version is required!" unless options.version
 fail "--operating-system is required!" unless options.operating_system
+fail "--java-versions is required!" if options.java_versions.empty?
 options.chdir = options.dist if options.chdir.nil?
 options.output_type = case options.operating_system
                       when :amazon, :fedora, :el, :sles, :redhatfips
@@ -264,38 +255,19 @@ if options.output_type == 'rpm'
   fpm_opts << "--rpm-rpmbuild-define '_app_prefix #{options.app_prefix}'"
   fpm_opts << "--rpm-rpmbuild-define '_app_data #{options.app_data}'"
 
-  if options.operating_system == :fedora # Fedora 41-45 are systemd and provide Java 25
+  if options.operating_system == :fedora # Fedora 41-45 are systemd
 
     options.systemd_el = 1
-    options.java = 'jre-25-headless'
-    options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
   elsif options.operating_system == :amazon
     fpm_opts << "--depends tzdata-java"
-    options.java = 'java-25-amazon-corretto-headless'
-    options.java_bin = '/usr/lib/jvm/java-25-amazon-corretto.x86_64/bin/java'
     options.systemd_el = 1
   elsif options.operating_system == :el || options.operating_system == :redhatfips
-    # All RedHat FIPS versions must use Java 21 as BouncyCastle is not
-    # FIPS certified for any newer JVM versions:
-    #
-    # > The 2.1.0 release, BC-FJA 2.1.0 (Certificate #4943) , is certified for
-    # > use on Java 8, Java 11, Java 17, and Java 21.
-    # https://www.bouncycastle.org/download/bouncy-castle-java-fips/
-    if options.os_version == 8 || options.operating_system == :redhatfips
-      options.java = 'jre-21-headless'
-      options.java_bin = '/usr/lib/jvm/jre-21/bin/java'
-    elsif options.os_version >= 9
-      options.java = 'jre-25-headless'
-      options.java_bin = '/usr/lib/jvm/jre-25/bin/java'
-    else
-      fail "Unrecognized el os version #{options.os_version}"
-    end
+    fail "Unrecognized el os version #{options.os_version}" if options.os_version < 8
+
     options.systemd_el = 1
   elsif options.operating_system == :sles && options.os_version >= 15
     options.systemd_sles = 1
     options.sles = 1
-    options.java = 'java-25-openjdk-headless'
-    options.java_bin = '/usr/lib64/jvm/jre-25/bin/java'
     options.rpmbuild_wrapper_dir = create_sles_rpmbuild_wrapper
   else
     fail "Unrecognized OS #{options.operating_system} version #{options.os_version}"
@@ -391,20 +363,6 @@ elsif options.output_type == 'deb'
    options.deb_activate_triggers.each do |trigger|
     fpm_opts << "--deb-activate #{trigger}"
   end
-
-  # figure out correct java dependency
-  case options.dist
-  # Focal Fossa,
-  when 'ubuntu20.04'
-    options.java = 'openjdk-21-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-21-openjdk-amd64/bin/java'
-  # Trixie, Forky, Noble Numbat, Plucky Puffin, Questing Quokka, Resolute Raccoon, Stonking Stingray
-  when 'debian13', 'debian14', 'ubuntu22.04', 'ubuntu24.04', 'ubuntu25.04', 'ubuntu25.10', 'ubuntu26.04', 'ubuntu26.10'
-    options.java = 'openjdk-25-jre-headless'
-    options.java_bin = '/usr/lib/jvm/java-25-openjdk-amd64/bin/java'
-  else
-    fail "no matching OS data found for #{options.dist}"
-  end
 end
 
 # generic options!
@@ -458,7 +416,9 @@ if options.name == "openvoxdb"
   termini_opts << "--conflicts 'puppetdb-termini'"
 end
 
-fpm_opts << "--depends '#{options.java}'"
+java_packages = options.java_versions.map { |version| java_package(options.operating_system, version) }
+warn "java packages are: #{java_packages.join(', ')}"
+fpm_opts.concat(java_dependency_opts(options.output_type, java_packages))
 
 fpm_opts << "--depends bash"
 fpm_opts << "--depends /usr/bin/which" if options.output_type == 'rpm'
