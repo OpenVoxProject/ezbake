@@ -44,7 +44,7 @@ end
 # on Type=notify plus an explicit ExecReload.
 def notify_reload?(options)
   case [options.operating_system, options.os_version.to_s, options.dist]
-  in [:redhatfips, _, _] then false         # Built against EL 8 and 9
+  in [:redhatfips, '8' | '9', _] then false # systemd 239 and 252
   in [:el, '8' | '9', _] then false         # systemd 239 and 252
   in [:amazon, '2023', _] then false        # systemd 252
   in [:sles, '15', _] then false            # systemd 249 up to and including SP5
